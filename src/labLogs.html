@@ -1,0 +1,511 @@
+<!DOCTYPE html>
+<html lang="en" x-data="labLogs()" x-init="init()" class="scroll-smooth">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>ChemFlow Lab Logs</title>
+  <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+  <link href="output.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+  <style>
+    /* Custom animations and gradients */
+    @keyframes float {
+      0%, 100% { transform: translateY(0px); }
+      50% { transform: translateY(-10px); }
+    }
+    
+    @keyframes glow {
+      0%, 100% { box-shadow: 0 0 20px rgba(34, 211, 238, 0.3); }
+      50% { box-shadow: 0 0 30px rgba(34, 211, 238, 0.6), 0 0 40px rgba(59, 130, 246, 0.4); }
+    }
+    
+    @keyframes shimmer {
+      0% { background-position: -200px 0; }
+      100% { background-position: calc(200px + 100%) 0; }
+    }
+    
+    .float-animation {
+      animation: float 3s ease-in-out infinite;
+    }
+    
+    .glow {
+      animation: glow 2s ease-in-out infinite alternate;
+    }
+    
+    .shimmer {
+      background: linear-gradient(90deg, #374151 25%, #4b5563 50%, #374151 75%);
+      background-size: 200px 100%;
+      animation: shimmer 1.5s infinite;
+    }
+
+    .shimmer2 {
+      background: linear-gradient(270deg, #60a5fa, #3b82f6, #1d4ed8, #60a5fa);
+      background-size: 400% 400%;
+      background-clip: text; 
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      animation: shimmer2 3s ease-in-out infinite;
+      text-shadow: 0 0 30px rgba(59, 130, 246, 0.5);
+    }
+    @keyframes shimmer2 {
+      0%{background-position:0% 50%}
+      50%{background-position:100% 50%}
+      100%{background-position:0% 50%}
+    }
+    
+    .gradient-border {
+      background: linear-gradient(45deg, #06b6d4, #3b82f6, #8b5cf6, #06b6d4);
+      background-size: 400% 400%;
+      animation: gradientShift 3s ease infinite;
+    }
+    
+    @keyframes gradientShift {
+      0%, 100% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+    }
+    
+    .card-hover {
+      transition: all 0.3s ease;
+    }
+    
+    .card-hover:hover {
+      transform: translateY(-8px) scale(1.02);
+      box-shadow: 0 20px 40px rgba(34, 211, 238, 0.2), 0 0 0 1px rgba(34, 211, 238, 0.3);
+    }
+    
+    .neon-text {
+      text-shadow: 0 0 10px rgba(34, 211, 238, 0.8), 0 0 20px rgba(34, 211, 238, 0.6), 0 0 30px rgba(34, 211, 238, 0.4);
+    }
+    
+    .bg-animated {
+      background: linear-gradient(-45deg, #0f172a, #1e293b, #0f172a, #1e293b);
+      background-size: 400% 400%;
+      animation: gradientBg 15s ease infinite;
+    }
+    
+    
+    
+    @keyframes gradientBg {
+      0%, 100% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+    }
+  </style>
+</head>
+<body class="bg-animated text-white min-h-screen">
+  <!-- Top Navbar -->
+  <header class="fixed top-0 left-0 w-full z-50 px-6 py-4 bg-slate-900 border-b border-slate-700/50 select-none" style="background-color: #0f172a;">
+  <div class="flex items-center justify-between">
+    
+    <div class="flex items-center space-x-4">
+      <button @click="goToLandingPage()" class="text-gray-400 hover:text-blue-400 transition-all duration-300 transform hover:scale-105 relative top-[6px]">
+        <i class="fas fa-arrow-left text-xl"></i>
+      </button>
+      <h1 class="text-3xl font-extrabold shimmer2 cursor-default select-none">ChemFlow</h1>
+    </div>
+
+    <nav class="flex items-center space-x-6 text-sm md:text-base">
+      <a href="#" class="nav-link hover:text-blue-400 transition" @click.prevent="logout()">Logout</a>
+    </nav>
+    
+  </div>
+</header>
+
+    <div x-show="currentView === 'logs'" class="flex-1 p-6 pt-24 overflow-y-auto min-h-screen">
+    <!-- Logs Dashboard View -->
+    <div x-show="!editingLog" x-transition:enter="transition ease-out duration-500" x-transition:enter-start="opacity-0 transform scale-95" x-transition:enter-end="opacity-100 transform scale-100">
+      <!-- Header -->
+      <div class="text-center mb-12">
+        <h1 class="text-4xl font-bold mb-4 text-white">User Log</h1>
+        <div class="flex justify-center">
+          <div class="w-24 h-1 bg-gradient-to-r from-cyan-400 to-blue-500 rounded-full"></div>
+        </div>
+      </div>
+      <!-- Enhanced Logs Grid -->
+      <div x-show="!loading && logs.length > 0" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+        <template x-for="(log, index) in logs" :key="log._id">
+            <div
+              class="bg-gradient-to-br from-gray-800 via-gray-900 to-gray-800 rounded-2xl p-6 border border-gray-700 hover:border-cyan-400 card-hover cursor-pointer group relative overflow-hidden transition-opacity duration-500"
+              :class="log.deleting ? 'opacity-0 pointer-events-none' : 'opacity-100'"
+              @click="openLog(log._id)"
+              x-transition:enter="transition ease-out duration-500"
+              x-transition:enter-start="opacity-0 transform translate-y-8 scale-95"
+              x-transition:enter-end="opacity-100 transform translate-y-0 scale-100"
+            >
+              <!-- Animated background gradient -->
+              <div class="absolute inset-0 bg-gradient-to-br from-cyan-400/5 to-blue-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+              
+              <!-- Content -->
+              <div class="relative z-10">
+                <!-- Header with delete button -->
+                <div class="flex items-start justify-between mb-6">
+                  <h3 class="text-white font-bold text-xl leading-tight group-hover:text-cyan-400 transition-colors duration-300 pr-2" x-text="log.title"></h3>
+                  <button
+                    @click.stop="deleteLog(log._id, index)"
+                    class="text-gray-500 hover:text-red-400 transition-all duration-200 opacity-0 group-hover:opacity-100 transform scale-90 hover:scale-110 p-2 rounded-full hover:bg-red-500/10"
+                  >
+                    <i class="fas fa-trash text-sm"></i>
+                  </button>
+                </div>
+                
+                <!-- Enhanced metadata -->
+                <div class="space-y-3 mb-6">
+                  <div class="flex items-center text-gray-400 text-sm group-hover:text-gray-300 transition-colors">
+                    <div class="w-8 h-8 bg-gradient-to-r from-cyan-400 to-blue-500 rounded-full flex items-center justify-center mr-3">
+                      <i class="fas fa-calendar-plus text-xs text-white"></i>
+                    </div>
+                    <div>
+                      <span class="text-gray-500">Created:</span>
+                      <span class="ml-1 font-medium" x-text="formatDate(log.createdAt)"></span>
+                    </div>
+                  </div>
+                  <div class="flex items-center text-gray-400 text-sm group-hover:text-gray-300 transition-colors">
+                    <div class="w-8 h-8 bg-gradient-to-r from-purple-400 to-pink-500 rounded-full flex items-center justify-center mr-3">
+                      <i class="fas fa-edit text-xs text-white"></i>
+                    </div>
+                    <div>
+                      <span class="text-gray-500">Modified:</span>
+                      <span class="ml-1 font-medium" x-text="formatDate(log.updatedAt)"></span>
+                    </div>
+                  </div>
+                </div>
+                
+                <!-- Enhanced call to action -->
+                <div class="bg-gradient-to-r from-cyan-400/10 to-blue-500/10 rounded-xl p-4 border border-cyan-400/20 group-hover:border-cyan-400/40 transition-colors">
+                  <div class="flex items-center justify-between">
+                    <div class="flex items-center text-cyan-400 font-medium group-hover:text-cyan-300 transition-colors">
+                      <i class="fas fa-microscope mr-2"></i>
+                      <span>Open Laboratory Notes</span>
+                    </div>
+                    <i class="fas fa-arrow-right text-cyan-400 transform group-hover:translate-x-2 transition-transform"></i>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </template>
+          
+      </div>
+
+      <!-- Enhanced Empty State -->
+      <div x-show="!loading && logs.length === 0" class="text-center py-20">
+        <div class="float-animation mb-8">
+          <div class="w-32 h-32 bg-gradient-to-br from-cyan-400 to-blue-500 rounded-full flex items-center justify-center mx-auto mb-6 relative">
+            <div class="absolute inset-0 bg-gradient-to-br from-cyan-400 to-blue-500 rounded-full animate-ping opacity-20"></div>
+            <i class="fas fa-flask text-4xl text-white relative z-10"></i>
+          </div>
+        </div>
+        <h3 class="text-3xl font-bold text-gray-200 mb-4">Empty Log Directory</h3>
+        <p class="text-xl text-gray-400 mb-8 max-w-md mx-auto">Start a new log to update/save progress</p>
+        <button @click="createNewLog()" class="bg-gradient-to-r from-cyan-400 to-blue-500 hover:from-cyan-500 hover:to-blue-600 text-white px-8 py-4 rounded-xl font-bold text-lg transition-all duration-300 transform hover:scale-110 shadow-2xl glow">
+          <i class="fas fa-plus mr-3"></i>Create New
+        </button>
+      </div>
+    </div>
+
+    <!-- Enhanced Log Editor View -->
+    <div x-show="editingLog" x-transition:enter="transition ease-out duration-500" x-transition:enter-start="opacity-0 transform translate-x-8" x-transition:enter-end="opacity-100 transform translate-x-0" class="max-w-5xl mx-auto">
+      <!-- Enhanced Editor Header -->
+      <div class="bg-gradient-to-r from-gray-800 to-gray-900 rounded-2xl p-6 mb-8 border border-gray-700 relative overflow-hidden">
+        <div class="absolute inset-0 bg-gradient-to-r from-cyan-400/5 to-blue-500/5"></div>
+        <div class="relative flex items-center justify-between">
+          <div class="flex items-center">
+            <button @click="closeEditor()" class="text-gray-400 hover:text-cyan-400 mr-6 transition-all duration-200 transform hover:scale-110">
+              <i class="fas fa-arrow-left text-2xl"></i>
+            </button>
+            <div>
+              <h1 class="text-3xl font-bold text-white mb-1" x-text="currentLog.id ? 'Edit Laboratory Log' : 'New Laboratory Log'"></h1>
+              <p class="text-gray-400">Save after completion</p>
+            </div>
+          </div>
+          <div class="flex space-x-4">
+            <button @click="closeEditor()" class="px-6 py-3 text-gray-400 hover:text-white border border-gray-600 hover:border-gray-500 rounded-xl transition-all duration-200 transform hover:scale-105">
+              <i class="fas fa-times mr-2"></i>Cancel
+            </button>
+            <button @click="saveLog()" :disabled="saving" class="bg-gradient-to-r from-cyan-400 to-blue-500 hover:from-cyan-500 hover:to-blue-600 disabled:opacity-50 text-white px-8 py-3 rounded-xl font-bold transition-all duration-200 transform hover:scale-105 shadow-xl">
+              <span x-show="!saving" class="flex items-center">
+                <i class="fas fa-save mr-2"></i>Save Log
+              </span>
+              <span x-show="saving" class="flex items-center">
+                <i class="fas fa-spinner fa-spin mr-2"></i>
+                Saving...
+              </span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Enhanced Editor Form -->
+      <div class="bg-gradient-to-br from-gray-800 to-gray-900 rounded-2xl p-8 border border-gray-700 relative overflow-hidden">
+        <div class="absolute inset-0 bg-gradient-to-br from-cyan-400/3 to-blue-500/3"></div>
+        <div class="relative">
+          <!-- Enhanced Title Input -->
+          <div class="mb-8">
+            <label class="block text-lg font-bold text-gray-200 mb-3 flex items-center">
+              <i class="fas fa-heading text-cyan-400 mr-2"></i>
+              Title
+            </label>
+            <input 
+              type="text" 
+              x-model="currentLog.title"
+              placeholder=""
+              class="w-full bg-gray-700/50 border-2 border-gray-600 focus:border-cyan-400 rounded-xl px-6 py-4 text-white text-xl placeholder-gray-400 focus:outline-none focus:ring-4 focus:ring-cyan-400/20 transition-all duration-200 backdrop-blur-sm"
+            >
+          </div>
+
+          <!-- Enhanced Content Textarea -->
+          <div class="mb-8">
+            <label class="block text-lg font-bold text-gray-200 mb-3 flex items-center">
+              <i class="fas fa-file-alt text-cyan-400 mr-2"></i>
+              Log Content
+            </label>
+            <textarea 
+              x-model="currentLog.content"
+              placeholder=""
+              rows="24"
+              class="w-full bg-gray-700/50 border-2 border-gray-600 focus:border-cyan-400 rounded-xl px-6 py-4 text-white placeholder-gray-400 focus:outline-none focus:ring-4 focus:ring-cyan-400/20 transition-all duration-200 resize-none backdrop-blur-sm text-lg leading-relaxed"
+            ></textarea>
+          </div>
+
+          <!-- Enhanced Timestamps -->
+          <div x-show="currentLog.id" class="bg-gradient-to-r from-gray-700/30 to-gray-600/30 rounded-xl p-6 border border-gray-600">
+            <h3 class="text-lg font-semibold text-gray-200 mb-4 flex items-center">
+              <i class="fas fa-clock text-cyan-400 mr-2"></i>
+              Log Timeline
+            </h3>
+            <div class="grid md:grid-cols-2 gap-6">
+              <div class="flex items-center space-x-3">
+                <div class="w-10 h-10 bg-gradient-to-r from-green-400 to-emerald-500 rounded-full flex items-center justify-center">
+                  <i class="fas fa-calendar-plus text-white text-sm"></i>
+                </div>
+                <div>
+                  <div class="text-sm text-gray-400">Initial Creation</div>
+                  <div class="text-white font-medium" x-text="formatDate(currentLog.createdAt)"></div>
+                </div>
+              </div>
+              <div class="flex items-center space-x-3">
+                <div class="w-10 h-10 bg-gradient-to-r from-blue-400 to-purple-500 rounded-full flex items-center justify-center">
+                  <i class="fas fa-edit text-white text-sm"></i>
+                </div>
+                <div>
+                  <div class="text-sm text-gray-400">Last Modified</div>
+                  <div class="text-white font-medium" x-text="formatDate(currentLog.updatedAt)"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Floating + Button -->
+  <button x-show="currentView !== 'logs' || (currentView === 'logs' && !editingLog)" 
+          @click="createNewLog()"
+          class="fixed bottom-8 right-8 bg-gradient-to-r from-cyan-400 to-blue-500 hover:from-cyan-500 hover:to-blue-600 text-white w-16 h-16 rounded-full shadow-2xl hover:shadow-cyan-400/25 transition-all duration-300 transform hover:scale-110 z-50 glow"
+          x-transition:enter="transition ease-out duration-500"
+          x-transition:enter-start="opacity-0 transform scale-0 rotate-180"
+          x-transition:enter-end="opacity-100 transform scale-100 rotate-0">
+    <i class="fas fa-plus text-2xl"></i>
+  </button>
+
+  <!-- Footer -->
+  <footer class="text-gray-400 text-center p-6 bg-slate-900/80 backdrop-blur-xl select-none text-sm border-t border-slate-700/50">
+    <div class="flex items-center justify-center space-x-6">
+      <span>© 2025 ChemFlow</span>
+      <a href="https://github.com/your-repo" target="_blank" class="nav-link hover:text-blue-400 transition">
+        <span class="mr-1">⭐</span> GitHub
+      </a>
+      <span class="text-blue-400">Built with Alpine.js & Tailwind CSS</span>
+    </div>
+  </footer>
+  
+  <script>
+  function labLogs() {
+    return {
+      currentView: 'logs',
+      logs: [],
+      loading: false,
+      saving: false,
+      editingLog: false,
+      currentLog: {
+        id: null,
+        title: '',
+        content: '',
+        createdAt: null,
+        updatedAt: null
+      },
+  
+      async init() {
+        if (!localStorage.getItem('token')) {
+        window.location.href = '/login.html';  // or your login URL
+        return;
+    }
+        if (this.currentView === 'logs') {
+          await this.loadLogs();
+        }
+      },
+  
+            async loadLogs() {
+        this.loading = true;       // set loading true at the start
+        try {
+            const response = await fetch('/api/logs', {
+            headers: {
+                'Authorization': `Bearer ${localStorage.getItem('token')}`
+            }
+            });
+            const data = await response.json();
+
+            if (data.success) {
+            this.logs = data.data; // set logs BEFORE loading false
+            } else {
+            console.error('Failed to load logs:', data.message);
+            this.logs = [];
+            }
+        } catch (error) {
+            console.error('Error loading logs:', error);
+            this.logs = [];
+        } finally {
+            this.loading = false;    // loading false AFTER logs updated
+        }
+        },
+
+  
+      async openLog(logId) {
+        try {
+          const response = await fetch(`/api/logs/${logId}`, {
+            headers: {
+              'Authorization': `Bearer ${localStorage.getItem('token')}`
+            }
+          });
+          const data = await response.json();
+          
+          if (data.success) {
+            this.currentLog = {
+              id: data.data._id,
+              title: data.data.title,
+              content: data.data.content,
+              createdAt: data.data.createdAt,
+              updatedAt: data.data.updatedAt
+            };
+            this.editingLog = true;
+          }
+        } catch (error) {
+          console.error('Error loading log:', error);
+        }
+      },
+  
+      createNewLog() {
+        this.currentLog = {
+          id: null,
+          title: '',
+          content: '',
+          createdAt: null,
+          updatedAt: null
+        };
+        this.editingLog = true;
+      },
+  
+      openLogsFromFloatingButton() {
+        this.currentView = 'logs';
+        this.sidebarOpen = false;
+        this.loadLogs();
+      },
+
+      goToLandingPage() {
+        // Replace with your actual landing page URL or routing logic
+        window.location.href = '/';
+      },
+
+      logout() {
+        localStorage.removeItem('token');
+        window.location.replace('/index.html');
+      },
+  
+      async saveLog() {
+        if (!this.currentLog.title.trim() || !this.currentLog.content.trim()) {
+          alert('Please fill in both title and content');
+          return;
+        }
+  
+        this.saving = true;
+        try {
+          const method = this.currentLog.id ? 'PUT' : 'POST';
+          const url = this.currentLog.id ? `/api/logs/${this.currentLog.id}` : '/api/logs';
+          
+          const response = await fetch(url, {
+            method,
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${localStorage.getItem('token')}`
+            },
+            body: JSON.stringify({
+              title: this.currentLog.title,
+              content: this.currentLog.content
+            })
+          });
+  
+          const data = await response.json();
+          
+          if (data.success) {
+            this.editingLog = false;
+            await this.loadLogs();
+          } else {
+            alert('Error saving log: ' + data.message);
+          }
+        } catch (error) {
+          console.error('Error saving log:', error);
+          alert('Error saving log');
+        } finally {
+          this.saving = false;
+        }
+      },
+  
+      async deleteLog(logId, index) {
+        this.logs[index].deleting = true;
+        try {
+          const response = await fetch(`/api/logs/${logId}`, {
+            method: 'DELETE',
+            headers: {
+              'Authorization': `Bearer ${localStorage.getItem('token')}`
+            }
+          });
+  
+          const data = await response.json();
+          
+          if (data.success) {
+            await new Promise(resolve => setTimeout(resolve, 500));
+            this.logs.splice(index, 1);
+          } else {
+            alert('Error deleting log: ' + data.message);
+            this.logs[index].deleting = false;
+          }
+        } catch (error) {
+          console.error('Error deleting log:', error);
+          alert('Error deleting log');
+        }
+      },
+  
+      closeEditor() {
+        this.editingLog = false;
+        this.currentLog = {
+          id: null,
+          title: '',
+          content: '',
+          createdAt: null,
+          updatedAt: null
+        };
+      },
+  
+      formatDate(dateString) {
+        return new Date(dateString).toLocaleDateString('en-US', {
+          year: 'numeric',
+          month: 'short',
+          day: 'numeric',
+          hour: '2-digit',
+          minute: '2-digit'
+        });
+      }
+    }
+  }
+  </script>
+</body>
+</html>

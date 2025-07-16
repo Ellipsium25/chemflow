@@ -1,0 +1,768 @@
+<!DOCTYPE html>
+<html lang="en" x-data="personalDBApp()" :class="{ 'dark': darkMode }" x-init="init()" class="bg-gray-900 text-gray-100 min-h-screen">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>ChemFlow - Personal Chemical DB</title>
+  
+  <!-- Tailwind CSS -->
+  <link href="output.css" rel="stylesheet">
+  <!-- Alpine.js -->
+  <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
+  <!-- Font Awesome -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+  
+  <style>
+    /* Custom animations and gradients matching global database */
+    @keyframes float {
+      0%, 100% { transform: translateY(0px); }
+      50% { transform: translateY(-10px); }
+    }
+    
+    @keyframes glow {
+      0%, 100% { box-shadow: 0 0 20px rgba(34, 211, 238, 0.3); }
+      50% { box-shadow: 0 0 30px rgba(34, 211, 238, 0.6), 0 0 40px rgba(59, 130, 246, 0.4); }
+    }
+    
+    @keyframes shimmer {
+      0% { background-position: -200px 0; }
+      100% { background-position: calc(200px + 100%) 0; }
+    }
+    
+    .shimmer {
+      background: linear-gradient(270deg, #60a5fa, #3b82f6, #1d4ed8, #60a5fa);
+      background-size: 400% 400%;
+      background-clip: text; 
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      animation: shimmer 3s ease-in-out infinite;
+      text-shadow: 0 0 30px rgba(59, 130, 246, 0.5);
+    }
+
+    .shimmer2 {
+      background: linear-gradient(270deg, #60a5fa, #3b82f6, #1d4ed8, #60a5fa);
+      background-size: 400% 400%;
+      background-clip: text; 
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      animation: shimmer2 3s ease-in-out infinite;
+      text-shadow: 0 0 30px rgba(59, 130, 246, 0.5);
+    }
+    @keyframes shimmer2 {
+      0%{background-position:0% 50%}
+      50%{background-position:100% 50%}
+      100%{background-position:0% 50%}
+    }
+    
+    .gradient-border {
+      background: linear-gradient(45deg, #06b6d4, #3b82f6, #8b5cf6, #06b6d4);
+      background-size: 400% 400%;
+      animation: gradientShift 3s ease infinite;
+    }
+    
+    @keyframes gradientShift {
+      0%, 100% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+    }
+    
+    .card-hover {
+      transition: all 0.3s ease;
+    }
+    
+    .card-hover:hover {
+      transform: translateY(-8px) scale(1.02);
+      box-shadow: 0 20px 40px rgba(34, 211, 238, 0.2), 0 0 0 1px rgba(34, 211, 238, 0.3);
+    }
+    
+    .bg-animated {
+      background: linear-gradient(-45deg, #0f172a, #1e293b, #0f172a, #1e293b);
+      background-size: 400% 400%;
+      animation: gradientBg 15s ease infinite;
+    }
+    
+    @keyframes gradientBg {
+      0%, 100% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+    }
+
+    .hazard-1 { @apply bg-green-500; }
+    .hazard-2 { @apply bg-yellow-500; }
+    .hazard-3 { @apply bg-orange-500; }
+    .hazard-4 { @apply bg-red-500; }
+
+    .search-glow:focus {
+      box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+      border-color: rgba(59, 130, 246, 0.5);
+    }
+
+    /* Modal backdrop blur */
+    .modal-backdrop {
+      backdrop-filter: blur(8px);
+      background-color: rgba(0, 0, 0, 0.6);
+    }
+
+    /* Custom scrollbar */
+    ::-webkit-scrollbar {
+      width: 8px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #1e293b;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #3b82f6;
+      border-radius: 4px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #2563eb;
+    }
+
+    [x-cloak] { display: none !important; }
+
+    /* Form input styling */
+    .form-input {
+      @apply bg-gray-700/50 border-2 border-gray-600 focus:border-cyan-400 rounded-xl text-white placeholder-gray-400;
+      @apply focus:outline-none focus:ring-4 focus:ring-cyan-400/20 transition-all duration-200 backdrop-blur-sm;
+    }
+
+    .btn-primary {
+      @apply bg-gradient-to-r from-cyan-400 to-blue-500 hover:from-cyan-500 hover:to-blue-600;
+      @apply text-white font-bold rounded-xl transition-all duration-300 transform hover:scale-105 shadow-lg;
+    }
+
+    .btn-secondary {
+      @apply bg-gradient-to-r from-gray-600 to-gray-700 hover:from-gray-500 hover:to-gray-600;
+      @apply text-white font-bold rounded-xl transition-all duration-300 transform hover:scale-105 shadow-lg;
+    }
+
+    .btn-danger {
+      @apply bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700;
+      @apply text-white font-bold rounded-xl transition-all duration-300 transform hover:scale-105 shadow-lg;
+    }
+
+    .btn-success {
+      @apply bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700;
+      @apply text-white font-bold rounded-xl transition-all duration-300 transform hover:scale-105 shadow-lg;
+    }
+
+    /* Opaque search dropdown */
+    .absolute.z-10.w-full.mt-2.bg-gray-800 {
+      background-color: #1e293b !important;
+      opacity: 1 !important;
+    }
+  </style>
+</head>
+
+<body class="bg-animated text-white min-h-screen">
+  <div x-cloak>
+    <!-- Top Navbar - Matching global database -->
+    <header class="fixed top-0 left-0 w-full z-50 px-6 py-4 bg-slate-900 border-b border-slate-700/50 select-none" style="background-color: #0f172a;">
+      <div class="flex items-center justify-between">
+        <div class="flex items-center space-x-4">
+          <button onclick="window.location.href='/index.html'" class="text-gray-400 hover:text-blue-400 transition-all duration-300 transform hover:scale-105 relative top-[6px]">
+            <i class="fas fa-arrow-left text-xl"></i>
+          </button>
+          <h1 class="text-3xl font-extrabold shimmer2 cursor-default select-none">ChemFlow</h1>
+        </div>
+
+        <nav class="flex items-center space-x-6 text-sm md:text-base">
+          <a href="#" class="nav-link hover:text-blue-400 transition" onclick="localStorage.removeItem('token'); window.location.replace('/index.html');">Logout</a>
+        </nav>
+      </div>
+    </header>
+
+    <!-- Loading Shimmer -->
+    <template x-if="loading">
+      <div class="fixed inset-0 z-50 modal-backdrop flex items-center justify-center">
+        <div class="w-32 h-32 bg-gradient-to-br from-cyan-400 to-blue-500 rounded-full flex items-center justify-center relative">
+          <div class="absolute inset-0 bg-gradient-to-br from-cyan-400 to-blue-500 rounded-full animate-spin opacity-20"></div>
+          <i class="fas fa-atom text-4xl text-white animate-spin"></i>
+        </div>
+      </div>
+    </template>
+
+    <!-- Main Content -->
+    <div class="pt-24 min-h-screen">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <!-- Header -->
+        <div class="text-center mb-12">
+          <h1 class="text-4xl font-bold mb-4 text-white">Available Sets</h1>
+          <div class="flex justify-center">
+            <div class="w-24 h-1 bg-gradient-to-r from-cyan-400 to-blue-500 rounded-full"></div>
+          </div>
+        </div>
+
+        <main class="space-y-12">
+          <!-- Personal Chemicals Section -->
+          <section class="bg-gradient-to-br from-gray-800 via-gray-900 to-gray-800 rounded-2xl p-8 border border-gray-700 shadow-2xl">
+            <h2 class="text-2xl font-bold mb-6 text-white flex items-center">
+              <i class="fas fa-flask text-cyan-400 mr-3"></i>
+              Your Chemical Inventory
+            </h2>
+            
+            <!-- Add Chemical Form -->
+            <form @submit.prevent="addChemical" class="mb-8">
+              <div class="grid md:grid-cols-3 gap-4">
+                <!-- Dynamic Chemical Search -->
+                <div class="relative">
+                  <input 
+                    type="text" 
+                    x-model="newChemicalName"
+                    @input="selectedChemical = null; filterAvailableChemicals()"
+                    @focus="showChemicalDropdown = true"
+                    @blur="setTimeout(() => showChemicalDropdown = false, 200)"
+                    placeholder="Search and select chemical to add..."
+                    class="w-full px-4 py-4 pl-12 form-input search-glow text-lg"
+                    required
+                  >
+                  <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                    <i class="fas fa-search text-gray-400"></i>
+                  </div>
+                  
+                  <!-- Chemical Dropdown -->
+                  <div x-show="showChemicalDropdown && filteredAvailableChemicals.length > 0" 
+                       class="absolute z-10 w-full mt-2 bg-gray-800 border border-gray-600 rounded-xl shadow-2xl max-h-60 overflow-y-auto">
+                    <template x-for="chem in filteredAvailableChemicals.slice(0, 10)" :key="chem.name">
+                      <div @click="selectChemical(chem.name)" 
+                           class="px-4 py-3 hover:bg-gray-700 cursor-pointer border-b border-gray-700 last:border-b-0">
+                        <div class="font-medium text-white" x-text="chem.name"></div>
+                        <div class="text-sm text-gray-400" x-text="chem.formula"></div>
+                      </div>
+                    </template>
+                  </div>
+                </div>
+                
+                <div class="flex gap-2">
+                  <input 
+                    type="number" 
+                    x-model="newChemicalQuantity" 
+                    placeholder="Quantity" 
+                    class="form-input px-4 py-4 text-lg flex-grow" 
+                    required 
+                  />
+                  <select x-model="newChemicalUnit" class="form-input px-4 py-4 text-lg w-24">
+                    <option value="gm">gm</option>
+                    <option value="ml">ml</option>
+                  </select>
+                </div>
+              </div>
+              <button type="submit" 
+                    class="btn-primary px-8 py-4 mt-4 text-lg" 
+                    :disabled="!selectedChemical || !newChemicalQuantity"
+                    :class="{ 'opacity-50 cursor-not-allowed': !selectedChemical || !newChemicalQuantity }">
+            <i class="fas fa-plus mr-2"></i>Add Chemical
+            </button>
+
+            </form>
+
+            <!-- Chemicals Table/Grid -->
+            <template x-if="personalChemicals.length === 0">
+              <div class="text-center py-16">
+                <div class="w-24 h-24 bg-gradient-to-br from-cyan-400 to-blue-500 rounded-full flex items-center justify-center mx-auto mb-6 opacity-50">
+                  <i class="fas fa-flask text-3xl text-white"></i>
+                </div>
+                <p class="text-xl text-gray-400 mb-4">No chemicals in your inventory yet</p>
+                <p class="text-gray-500">Add your first chemical to get started!</p>
+              </div>
+            </template>
+
+            <div x-show="personalChemicals.length > 0" class="overflow-x-auto">
+              <table class="w-full border-collapse">
+                <thead>
+                  <tr class="bg-gradient-to-r from-cyan-900/30 to-blue-900/30 border-b border-cyan-700/50">
+                    <th class="text-left px-6 py-4 text-cyan-400 font-bold">Chemical Name</th>
+                    <th class="text-left px-6 py-4 text-cyan-400 font-bold">Formula</th>
+                    <th class="text-left px-6 py-4 text-cyan-400 font-bold">IUPAC Name</th>
+                    <th class="text-left px-6 py-4 text-cyan-400 font-bold">Quantity</th>
+                    <th class="text-center px-6 py-4 text-cyan-400 font-bold">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <template x-for="chem in personalChemicals" :key="chem._id">
+                    <tr class="border-b border-gray-700/50 hover:bg-gray-700/30 transition-colors">
+                      <td class="px-6 py-4 font-medium text-white" x-text="chem.name"></td>
+                      <td class="px-6 py-4 text-gray-300 font-mono" x-text="chem.formula"></td>
+                      <td class="px-6 py-4 text-gray-400 text-sm italic" x-text="chem.iupac"></td>
+                      <td class="px-6 py-4">
+                        <input 
+                          type="text" 
+                          class="form-input px-3 py-2 w-32"
+                          :value="chem.quantity"
+                          @change="updateQuantity(chem._id, $event.target.value)" 
+                        />
+                      </td>
+                      <td class="px-6 py-4 text-center">
+                        <button @click="deleteChemical(chem._id)" 
+                                class="text-red-400 hover:text-red-300 transition-colors p-2 rounded-lg hover:bg-red-900/20" 
+                                title="Delete Chemical">
+                          <i class="fas fa-trash text-lg"></i>
+                        </button>
+                      </td>
+                    </tr>
+                  </template>
+                </tbody>
+              </table>
+            </div>
+          </section>
+
+          <!-- Chemical Requests Section -->
+          <section class="bg-gradient-to-br from-gray-800 via-gray-900 to-gray-800 rounded-2xl p-8 border border-gray-700 shadow-2xl">
+            <h2 class="text-2xl font-bold mb-6 text-white flex items-center">
+              <i class="fas fa-paper-plane text-purple-400 mr-3"></i>
+              Chemical Requests
+            </h2>
+
+            <!-- Submit Request Form -->
+            <form @submit.prevent="submitRequest" class="mb-8">
+              <div class="flex gap-4">
+                <input 
+                  type="text" 
+                  x-model="newRequestName" 
+                  placeholder="Enter chemical name to request..." 
+                  required
+                  class="flex-grow form-input px-4 py-4 text-lg"
+                />
+                <button type="submit" class="btn-primary px-8 py-4 text-lg">
+                  <i class="fas fa-paper-plane mr-2"></i>Submit Request
+                </button>
+              </div>
+            </form>
+
+            <!-- User Requests List -->
+            <template x-if="userRequests.length === 0">
+              <div class="text-center py-12">
+                <div class="w-20 h-20 bg-gradient-to-br from-purple-400 to-pink-500 rounded-full flex items-center justify-center mx-auto mb-4 opacity-50">
+                  <i class="fas fa-paper-plane text-2xl text-white"></i>
+                </div>
+                <p class="text-lg text-gray-400">No requests submitted yet</p>
+              </div>
+            </template>
+
+            <div x-show="userRequests.length > 0" class="space-y-4 max-h-96 overflow-y-auto">
+              <template x-for="req in userRequests" :key="req._id">
+                <div class="bg-gray-700/30 rounded-xl p-6 border border-gray-600 hover:border-cyan-400/50 transition-colors card-hover">
+                  <div class="flex justify-between items-start">
+                    <div class="flex-grow">
+                      <div class="flex items-center space-x-3 mb-2">
+                        <span class="font-bold text-lg text-white" x-text="req.chemicalName"></span>
+                        <span class="px-3 py-1 rounded-full text-sm font-medium" :class="{
+                          'bg-yellow-500/20 text-yellow-400 border border-yellow-500/30': req.status === 'pending',
+                          'bg-green-500/20 text-green-400 border border-green-500/30': req.status === 'approved',
+                          'bg-red-500/20 text-red-400 border border-red-500/30': req.status === 'rejected'
+                        }" x-text="req.status.charAt(0).toUpperCase() + req.status.slice(1)"></span>
+                      </div>
+                      <template x-if="req.feedback && req.status === 'rejected'">
+                        <div class="mt-3 p-3 bg-red-900/20 rounded-lg border border-red-700/50">
+                          <p class="text-sm text-red-300">
+                            <i class="fas fa-comment-alt mr-2"></i>
+                            <span x-text="req.feedback"></span>
+                          </p>
+                        </div>
+                      </template>
+                    </div>
+
+                    <template x-if="isAdmin">
+                      <div class="flex space-x-2 ml-4">
+                        <button @click="approveRequest(req._id)" class="btn-success px-4 py-2 text-sm">
+                          <i class="fas fa-check mr-1"></i>Approve
+                        </button>
+                        <button @click="openRejectModal(req)" class="btn-danger px-4 py-2 text-sm">
+                          <i class="fas fa-times mr-1"></i>Reject
+                        </button>
+                      </div>
+                    </template>
+                  </div>
+                </div>
+              </template>
+            </div>
+          </section>
+        </main>
+      </div>
+    </div>
+
+    <!-- Reject Feedback Modal -->
+    <div x-show="rejectModalOpen" 
+         x-transition:enter="transition ease-out duration-300" 
+         x-transition:enter-start="opacity-0" 
+         x-transition:enter-end="opacity-100"
+         x-transition:leave="transition ease-in duration-200" 
+         x-transition:leave-start="opacity-100" 
+         x-transition:leave-end="opacity-0"
+         class="fixed inset-0 z-50 modal-backdrop flex items-center justify-center p-4"
+         @click="rejectModalOpen = false">
+      
+      <div x-show="rejectModalOpen" 
+           x-transition:enter="transition ease-out duration-300" 
+           x-transition:enter-start="opacity-0 transform scale-95" 
+           x-transition:enter-end="opacity-100 transform scale-100"
+           x-transition:leave="transition ease-in duration-200" 
+           x-transition:leave-start="opacity-100 transform scale-100" 
+           x-transition:leave-end="opacity-0 transform scale-95"
+           class="bg-gradient-to-br from-gray-800 to-gray-900 rounded-2xl p-8 max-w-md w-full border border-gray-700 relative"
+           @click.stop>
+        
+        <!-- Close Button -->
+        <button @click="rejectModalOpen = false" class="absolute top-6 right-6 text-gray-400 hover:text-white transition-colors duration-200">
+          <i class="fas fa-times text-xl"></i>
+        </button>
+
+        <div class="mb-6">
+          <h3 class="text-2xl font-bold text-white mb-2">Reject Request</h3>
+          <p class="text-gray-400">Chemical: <span class="text-cyan-400 font-medium" x-text="rejectRequestItem?.chemicalName"></span></p>
+        </div>
+        
+        <textarea 
+          x-model="rejectFeedback" 
+          rows="4" 
+          class="w-full form-input px-4 py-3 mb-6" 
+          placeholder="Optional feedback for the requester..."
+        ></textarea>
+        
+        <div class="flex justify-end space-x-4">
+          <button @click="rejectModalOpen = false" class="btn-secondary px-6 py-3">
+            <i class="fas fa-times mr-2"></i>Cancel
+          </button>
+          <button @click="rejectRequestConfirm" class="btn-danger px-6 py-3">
+            <i class="fas fa-ban mr-2"></i>Reject Request
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Footer - Matching global database -->
+    <footer class="text-gray-400 text-center p-6 bg-slate-900/80 backdrop-blur-xl select-none text-sm border-t border-slate-700/50">
+      <div class="flex items-center justify-center space-x-6">
+        <span>© 2025 ChemFlow</span>
+        <a href="https://github.com/your-repo" target="_blank" class="nav-link hover:text-blue-400 transition">
+          <span class="mr-1">⭐</span> GitHub
+        </a>
+        <span class="text-blue-400">Built with Alpine.js & Tailwind CSS</span>
+      </div>
+    </footer>
+  </div>
+
+  <script>
+    function personalDBApp() {
+      return {
+        darkMode: true,
+        loading: false,
+        personalChemicals: [],
+        availableChemicals: [],
+        filteredAvailableChemicals: [],
+        showChemicalDropdown: false,
+        newChemicalName: '',
+        newChemicalQuantity: '',
+        newChemicalUnit: 'gm',
+        userRequests: [],
+        newRequestName: '',
+        isAdmin: false,
+        rejectModalOpen: false,
+        rejectRequestItem: null,
+        rejectFeedback: '',
+        selectedChemical: null,
+
+
+        async init() {
+        this.loadPersonalChemicals();
+        this.loadAvailableChemicals();
+        await this.checkAdmin();
+
+        if (this.isAdmin) {
+            await this.loadAllRequestsForAdmin();
+        } else {
+            await this.loadUserRequests();
+        }
+        },
+
+
+        // New method for filtering available chemicals
+        filterAvailableChemicals() {
+          if (!this.newChemicalName.trim()) {
+            this.filteredAvailableChemicals = [];
+            return;
+          }
+          
+          const query = this.newChemicalName.toLowerCase().trim();
+          this.filteredAvailableChemicals = this.availableChemicals.filter(chemical => 
+            chemical.name.toLowerCase().includes(query) ||
+            chemical.formula.toLowerCase().includes(query)
+          );
+        },
+
+        // New method for selecting chemical from dropdown
+        selectChemical(chemicalName) {
+            this.newChemicalName = chemicalName;
+            this.selectedChemical = this.availableChemicals.find(c => c.name === chemicalName) || null;
+            this.showChemicalDropdown = false;
+            this.filteredAvailableChemicals = [];
+        },
+
+
+        // Check admin status from backend or token (simplified here)
+        async checkAdmin() {
+          try {
+            const res = await fetch('/api/auth/me', {
+              headers: {
+                'Authorization': `Bearer ${localStorage.getItem('token')}`
+              }
+            });
+
+            if (res.ok) {
+              const data = await res.json();
+              this.isAdmin = data.user?.isAdmin === true;
+            } else {
+              this.isAdmin = false;
+            }
+          } catch (e) {
+            console.error('Failed to check admin status:', e);
+            this.isAdmin = false;
+          }
+        },
+
+        async loadAvailableChemicals() {
+          try {
+            const res = await fetch('/chemicals.json');
+            this.availableChemicals = await res.json();
+          } catch (e) {
+            console.error('Failed to load chemicals.json', e);
+          }
+        },
+
+        async loadPersonalChemicals() {
+          this.loading = true;
+          try {
+            const res = await fetch('/api/personaldb/chemicals', {
+              headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+            });
+            this.personalChemicals = await res.json();
+          } catch (e) {
+            console.error(e);
+          } finally {
+            this.loading = false;
+          }
+        },
+
+        async addChemical() {
+            if (!this.selectedChemical || !this.newChemicalQuantity) return;
+
+            // Check if already in personalChemicals by name
+            const exists = this.personalChemicals.some(chem => chem.name === this.selectedChemical.name);
+            if (exists) {
+                alert(`Chemical '${this.selectedChemical.name}' is already in your inventory.`);
+                // Reset input so user can enter new chemical
+                this.newChemicalName = '';
+                this.selectedChemical = null;
+                this.newChemicalQuantity = '';
+                return;
+            }
+
+            this.loading = true;
+            try {
+                const res = await fetch('/api/personaldb/chemicals', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${localStorage.getItem('token')}`
+                },
+                body: JSON.stringify({
+                    name: this.selectedChemical.name,
+                    quantity: `${this.newChemicalQuantity} ${this.newChemicalUnit}`
+                })
+                });
+                if (!res.ok) {
+                const error = await res.json();
+                console.error('Add chemical error:', error);
+                alert(error.message || 'Failed to add chemical');
+                return;
+                }
+
+                const data = await res.json();
+                this.newChemicalName = '';
+                this.selectedChemical = null;
+                this.newChemicalQuantity = '';
+                this.newChemicalUnit = 'gm';
+                this.filteredAvailableChemicals = [];
+                await this.loadPersonalChemicals();
+                this.logActivity('Chemical added');
+            } catch (e) {
+                console.error(e);
+            } finally {
+                this.loading = false;
+            }
+            },
+
+
+        async updateQuantity(id, quantity) {
+          this.loading = true;
+          try {
+            const res = await fetch(`/api/personaldb/chemicals/${id}`, {
+              method: 'PATCH',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${localStorage.getItem('token')}`
+              },
+              body: JSON.stringify({ quantity })
+            });
+            if (!res.ok) {
+              const error = await res.json();
+              return;
+            }
+            const data = await res.json();
+            this.logActivity('Quantity updated');
+          } catch (e) {
+            console.error(e);
+          } finally {
+            this.loading = false;
+          }
+        },
+
+        async deleteChemical(id) {
+          this.loading = true;
+          try {
+            const res = await fetch(`/api/personaldb/chemicals/${id}`, {
+              method: 'DELETE',
+              headers: {
+                'Authorization': `Bearer ${localStorage.getItem('token')}`
+              }
+            });
+            if (!res.ok) {
+              const error = await res.json();
+              return;
+            }
+            const data = await res.json();
+            await this.loadPersonalChemicals();
+            this.logActivity('Chemical deleted');
+          } catch (e) {
+            console.error(e);
+          } finally {
+            this.loading = false;
+          }
+        },
+
+        async submitRequest() {
+          if (!this.newRequestName) return;
+          this.loading = true;
+          try {
+            const res = await fetch('/api/personaldb/requests', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${localStorage.getItem('token')}`
+              },
+              body: JSON.stringify({ chemicalName: this.newRequestName })
+            });
+            if (!res.ok) {
+              const error = await res.json();
+              return;
+            }
+            const data = await res.json();
+            this.newRequestName = '';
+            await this.loadUserRequests();
+            this.logActivity('Request submitted');
+          } catch (e) {
+            console.error(e);
+          } finally {
+            this.loading = false;
+          }
+        },
+
+        async loadUserRequests() {
+          this.loading = true;
+          try {
+            const res = await fetch('/api/personaldb/requests', {
+              headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+            });
+            this.userRequests = await res.json();
+          } catch (e) {
+            console.error(e);
+          } finally {
+            this.loading = false;
+          }
+        },
+
+        // Admin Approve Request
+        async approveRequest(id) {
+          this.loading = true;
+          try {
+            const res = await fetch(`/api/personaldb/admin/requests/${id}/approve`, {
+              method: 'PATCH',
+              headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+            });
+            if (!res.ok) {
+              const error = await res.json();
+              return;
+            }
+            const data = await res.json();
+            await this.loadAllRequestsForAdmin(); 
+            this.logActivity('Request approved');
+          } catch (e) {
+            console.error(e);
+          } finally {
+            this.loading = false;
+          }
+        },
+
+        // Admin Reject Request
+        openRejectModal(request) {
+          this.rejectRequestItem = request;
+          this.rejectFeedback = '';
+          this.rejectModalOpen = true;
+        },
+
+        async rejectRequestConfirm() {
+          this.loading = true;
+          try {
+            const res = await fetch(`/api/personaldb/admin/requests/${this.rejectRequestItem._id}/reject`, {
+              method: 'PATCH',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${localStorage.getItem('token')}`
+              },
+              body: JSON.stringify({ feedback: this.rejectFeedback })
+            });
+            if (!res.ok) {
+              const error = await res.json();
+              return;
+            }
+            const data = await res.json();
+            this.rejectModalOpen = false;
+            await this.loadAllRequestsForAdmin();
+            this.logActivity('Request rejected');
+          } catch (e) {
+            console.error(e);
+          } finally {
+            this.loading = false;
+          }
+        },
+
+                async loadAllRequestsForAdmin() {
+        this.loading = true;
+        try {
+            const res = await fetch('/api/personaldb/admin/requests', {
+            headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+            });
+            if (!res.ok) {
+            console.error('Failed to load admin requests');
+            this.userRequests = [];
+            return;
+            }
+            this.userRequests = await res.json();
+        } catch (e) {
+            console.error(e);
+        } finally {
+            this.loading = false;
+        }
+        },
+
+
+        // Placeholder for pushing activity logs to the landing page
+        logActivity(message) {
+          console.log(`[Activity] ${message} at ${new Date().toLocaleTimeString()}`);
+        }
+      };
+    }
+  </script>
+
+</body>
+
+</html>

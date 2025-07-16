@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html lang="en" x-data="authPage()" x-init="init()" class="scroll-smooth">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Login - ChemFlow</title>
+  <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+  <link href="output.css" rel="stylesheet">
+  <style>
+    /* Your fancy styles from previous message here, plus these new additions */
+
+    body {
+      background: 
+        radial-gradient(circle at 20% 80%, rgba(59, 130, 246, 0.1) 0%, transparent 50%),
+        radial-gradient(circle at 80% 20%, rgba(147, 51, 234, 0.1) 0%, transparent 50%),
+        #0f172a;
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-family: 'Inter', sans-serif;
+      color: white;
+    }
+
+    .shimmer {
+      background: linear-gradient(270deg, #60a5fa, #3b82f6, #1d4ed8, #60a5fa);
+      background-size: 400% 400%;
+      background-clip: text; 
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      animation: shimmer 3s ease-in-out infinite;
+      text-shadow: 0 0 30px rgba(59, 130, 246, 0.5);
+    }
+    @keyframes shimmer {
+      0%{background-position:0% 50%}
+      50%{background-position:100% 50%}
+      100%{background-position:0% 50%}
+    }
+
+    /* Container for form */
+    .form-container {
+      background: rgba(15, 23, 42, 0.9);
+      padding: 2rem;
+      border-radius: 1rem;
+      box-shadow:
+        0 8px 24px rgba(59, 130, 246, 0.4),
+        inset 0 0 20px rgba(59, 130, 246, 0.15);
+      width: 100%;
+      max-width: 420px;
+    }
+
+    /* Buttons style */
+    .btn-primary {
+      background: linear-gradient(45deg, #3b82f6, #8b5cf6);
+      border: none;
+      color: white;
+      font-weight: 600;
+      padding: 0.75rem 1.25rem;
+      border-radius: 0.5rem;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      position: relative;
+      overflow: hidden;
+      width: 100%;
+      text-align: center;
+    }
+    .btn-primary::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+      transition: left 0.6s;
+      z-index: 1;
+    }
+    .btn-primary:hover::before {
+      left: 100%;
+    }
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 25px rgba(59, 130, 246, 0.6);
+    }
+
+    /* Tab buttons */
+    .tab-btn {
+      flex: 1;
+      padding: 0.5rem 0;
+      font-weight: 600;
+      border-radius: 0.5rem;
+      cursor: pointer;
+      transition: background-color 0.3s, color 0.3s;
+      text-align: center;
+      user-select: none;
+    }
+    .tab-btn.active-user {
+      background: white;
+      color: #3b82f6;
+      box-shadow: 0 0 8px #3b82f6;
+    }
+    .tab-btn.active-guest {
+      background: white;
+      color: #22c55e;
+      box-shadow: 0 0 8px #22c55e;
+    }
+    .tab-btn.inactive {
+      color: #94a3b8;
+      background: transparent;
+    }
+    .tab-btn.inactive:hover {
+      color: white;
+    }
+
+    /* Input styles */
+    input[type="email"],
+    input[type="password"],
+    input[type="text"] {
+      width: 100%;
+      padding: 0.5rem 0.75rem;
+      border-radius: 0.5rem;
+      border: 1px solid #475569;
+      background: #1e293b;
+      color: white;
+      transition: border-color 0.3s;
+    }
+    input[type="email"]:focus,
+    input[type="password"]:focus,
+    input[type="text"]:focus {
+      outline: none;
+      border-color: #3b82f6;
+      box-shadow: 0 0 8px #3b82f6;
+      background: #334155;
+    }
+
+    /* Error message */
+    #errorMessage {
+      background: #fee2e2;
+      border: 1px solid #fca5a5;
+      color: #b91c1c;
+      padding: 0.75rem;
+      border-radius: 0.5rem;
+      margin-top: 1rem;
+      font-weight: 600;
+      font-size: 0.875rem;
+    }
+
+    /* Loading spinner container */
+    #loadingState {
+      margin-top: 1rem;
+      text-align: center;
+      color: #3b82f6;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="form-container" x-data="authPage()" x-cloak>
+    <h1 class="text-center text-4xl font-extrabold mb-6 shimmer cursor-default select-none">ChemFlow</h1>
+
+    <!-- Auth Type Toggle -->
+    <div class="flex mb-6 bg-gray-900 rounded-lg p-1">
+      <button
+        :class="authType === 'user' ? 'tab-btn active-user' : 'tab-btn inactive'"
+        @click="switchAuthType('user')"
+      >
+        User Account
+      </button>
+      <button
+        :class="authType === 'guest' ? 'tab-btn active-guest' : 'tab-btn inactive'"
+        @click="switchAuthType('guest')"
+      >
+        Guest Access
+      </button>
+    </div>
+
+    <!-- User Form -->
+    <div x-show="authType === 'user'" x-transition class="space-y-4">
+      <div class="flex bg-gray-900 rounded-lg p-1 mb-4">
+        <button
+          :class="userMode === 'login' ? 'tab-btn active-user' : 'tab-btn inactive'"
+          @click="switchUserMode('login')"
+          type="button"
+        >
+          Login
+        </button>
+        <button
+          :class="userMode === 'register' ? 'tab-btn active-user' : 'tab-btn inactive'"
+          @click="switchUserMode('register')"
+          type="button"
+        >
+          Register
+        </button>
+      </div>
+
+      <form @submit.prevent="handleSubmit" novalidate>
+        <div class="space-y-4">
+          <div>
+            <label for="email" class="block text-sm font-semibold mb-1">Email</label>
+            <input
+              type="email" id="email" name="email" required
+              x-model="form.email"
+              autocomplete="email"
+              placeholder="you@example.com"
+            />
+          </div>
+
+          <div>
+            <label for="password" class="block text-sm font-semibold mb-1">Password</label>
+            <input
+              type="password" id="password" name="password" required minlength="6"
+              x-model="form.password"
+              placeholder="••••••••"
+              autocomplete="current-password"
+            />
+          </div>
+
+          <div x-show="userMode === 'register'" x-transition>
+            <label for="name" class="block text-sm font-semibold mb-1">Name (optional)</label>
+            <input
+              type="text" id="name" name="name"
+              x-model="form.name"
+              placeholder="Your full name"
+              autocomplete="name"
+            />
+          </div>
+        </div>
+
+        <button
+          type="submit"
+          class="btn-primary mt-6"
+          x-text="userMode === 'login' ? 'Login' : 'Register'"
+          :disabled="loading"
+        ></button>
+      </form>
+    </div>
+
+    <!-- Guest Form -->
+    <div x-show="authType === 'guest'" x-transition>
+      <div class="text-gray-400 text-center mb-4 select-none">
+        <p class="text-sm">Start using the app instantly as a guest</p>
+        <p class="text-xs mt-1">Guest data will be cleared when you logout</p>
+      </div>
+      <button
+        class="btn-primary bg-green-600 hover:bg-green-700 focus:ring-green-500"
+        @click="handleGuestLogin"
+        :disabled="loading"
+      >
+        Continue as Guest
+      </button>
+    </div>
+
+    <!-- Error message -->
+    <template x-if="errorMessage">
+      <div id="errorMessage" x-text="errorMessage"></div>
+    </template>
+
+    <!-- Loading State -->
+    <div id="loadingState" x-show="loading" x-transition>
+      <svg class="animate-spin h-5 w-5 text-blue-400 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+      </svg>
+      Processing...
+    </div>
+  </div>
+
+  <script>
+    function authPage() {
+      return {
+        authType: 'user', // 'user' or 'guest'
+        userMode: 'login', // 'login' or 'register'
+        loading: false,
+        errorMessage: '',
+        form: {
+          email: '',
+          password: '',
+          name: '',
+        },
+        switchAuthType(type) {
+          this.authType = type;
+          this.errorMessage = '';
+          this.loading = false;
+          this.form.email = '';
+          this.form.password = '';
+          this.form.name = '';
+        },
+        switchUserMode(mode) {
+          this.userMode = mode;
+          this.errorMessage = '';
+          this.loading = false;
+          this.form.email = '';
+          this.form.password = '';
+          this.form.name = '';
+        },
+        async handleSubmit() {
+          this.errorMessage = '';
+          this.loading = true;
+
+          const endpoint = this.userMode === 'login' ? '/api/auth/login' : '/api/auth/register';
+          const payload = {
+            email: this.form.email,
+            password: this.form.password,
+          };
+          if (this.userMode === 'register' && this.form.name) {
+            payload.name = this.form.name;
+          }
+
+          try {
+            const response = await fetch(endpoint, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(payload),
+            });
+            const data = await response.json();
+
+            if (response.ok) {
+              localStorage.setItem('token', data.token);
+              localStorage.setItem('user', JSON.stringify(data.user));
+              // Redirect to landing page (not dashboard)
+              window.location.href = '/';
+            } else {
+              this.errorMessage = data.error || 'Authentication failed';
+            }
+          } catch (e) {
+            this.errorMessage = 'Network error. Please try again.';
+          } finally {
+            this.loading = false;
+          }
+        },
+        async handleGuestLogin() {
+          this.errorMessage = '';
+          this.loading = true;
+          try {
+            const response = await fetch('/api/auth/guest', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+            });
+            const data = await response.json();
+
+            if (response.ok) {
+              localStorage.setItem('token', data.token);
+              localStorage.setItem('user', JSON.stringify(data.user));
+              // Redirect to landing page (not dashboard)
+              window.location.href = '/';
+            } else {
+              this.errorMessage = data.error || 'Failed to create guest session';
+            }
+          } catch (e) {
+            this.errorMessage = 'Network error. Please try again.';
+          } finally {
+            this.loading = false;
+          }
+        },
+        init() {
+          // Redirect if already logged in
+          if (localStorage.getItem('token')) {
+            window.location.href = '/';
+          }
+        }
+      };
+    }
+  </script>
+</body>
+</html>

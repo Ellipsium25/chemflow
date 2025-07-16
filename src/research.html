@@ -1,0 +1,576 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ChemFlow — Research Papers</title>
+    <link href="output.css" rel="stylesheet">
+    <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        /* Custom animations and gradients */
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+        }
+        
+        @keyframes glow {
+            0%, 100% { box-shadow: 0 0 20px rgba(34, 211, 238, 0.3); }
+            50% { box-shadow: 0 0 30px rgba(34, 211, 238, 0.6), 0 0 40px rgba(59, 130, 246, 0.4); }
+        }
+        
+        @keyframes shimmer {
+            0% { background-position: -200px 0; }
+            100% { background-position: calc(200px + 100%) 0; }
+        }
+        
+        .shimmer {
+            background: linear-gradient(270deg, #60a5fa, #3b82f6, #1d4ed8, #60a5fa);
+            background-size: 400% 400%;
+            background-clip: text; 
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            animation: shimmer 3s ease-in-out infinite;
+            text-shadow: 0 0 30px rgba(59, 130, 246, 0.5);
+        }
+
+        .shimmer2 {
+            background: linear-gradient(270deg, #60a5fa, #3b82f6, #1d4ed8, #60a5fa);
+            background-size: 400% 400%;
+            background-clip: text; 
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            animation: shimmer2 3s ease-in-out infinite;
+            text-shadow: 0 0 30px rgba(59, 130, 246, 0.5);
+        }
+        
+        @keyframes shimmer2 {
+            0%{background-position:0% 50%}
+            50%{background-position:100% 50%}
+            100%{background-position:0% 50%}
+        }
+        
+        .gradient-border {
+            background: linear-gradient(45deg, #06b6d4, #3b82f6, #8b5cf6, #06b6d4);
+            background-size: 400% 400%;
+            animation: gradientShift 3s ease infinite;
+        }
+        
+        @keyframes gradientShift {
+            0%, 100% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+        }
+        
+        .card-hover {
+            transition: all 0.3s ease;
+        }
+        
+        .card-hover:hover {
+            transform: translateY(-8px) scale(1.02);
+            box-shadow: 0 20px 40px rgba(34, 211, 238, 0.2), 0 0 0 1px rgba(34, 211, 238, 0.3);
+        }
+        
+        .bg-animated {
+            background: linear-gradient(-45deg, #0f172a, #1e293b, #0f172a, #1e293b);
+            background-size: 400% 400%;
+            animation: gradientBg 15s ease infinite;
+        }
+        
+        @keyframes gradientBg {
+            0%, 100% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+        }
+
+        .search-glow:focus {
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+            border-color: rgba(59, 130, 246, 0.5);
+        }
+
+        /* Modal backdrop blur */
+        .modal-backdrop {
+            backdrop-filter: blur(8px);
+            background-color: rgba(0, 0, 0, 0.6);
+        }
+
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #1e293b;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #3b82f6;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #2563eb;
+        }
+
+        .line-clamp-4 {
+            display: -webkit-box;
+            -webkit-line-clamp: 4;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        [x-cloak] { display: none !important; }
+    </style>
+</head>
+<body class="bg-animated text-white min-h-screen">
+    <div x-data="researchApp()" x-init="init()" x-cloak>
+        <!-- Top Navbar -->
+        <header class="fixed top-0 left-0 w-full z-50 px-6 py-4 bg-slate-900 border-b border-slate-700/50 select-none" style="background-color: #0f172a;">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center space-x-4">
+                    <button @click="goToDashboard()" class="text-gray-400 hover:text-blue-400 transition-all duration-300 transform hover:scale-105 relative top-[6px]">
+                        <i class="fas fa-arrow-left text-xl"></i>
+                    </button>
+                    <h1 class="text-3xl font-extrabold shimmer2 cursor-default select-none">ChemFlow</h1>
+                </div>
+
+                <nav class="flex items-center space-x-6 text-sm md:text-base">
+                    <a href="#" class="nav-link hover:text-blue-400 transition" @click.prevent="logout()">Logout</a>
+                </nav>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <div class="pt-24 min-h-screen">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+                <!-- Header -->
+                <div class="text-center mb-12">
+                    <h1 class="text-4xl font-bold mb-4 text-white">Research Papers</h1>
+                    <div class="flex justify-center">
+                        <div class="w-24 h-1 bg-gradient-to-r from-cyan-400 to-blue-500 rounded-full"></div>
+                    </div>
+                </div>
+
+                <!-- Enhanced Search Section -->
+                <div class="mb-12">
+                    <div class="max-w-2xl mx-auto">
+                        <div class="relative">
+                            <input 
+                                type="search" 
+                                x-model="searchQuery"
+                                @input.debounce.500ms="searchPapers()"
+                                placeholder="Search papers by title or author..."
+                                class="w-full px-4 py-4 pl-12 bg-gray-700/50 border-2 border-gray-600 focus:border-cyan-400 rounded-xl text-white placeholder-gray-400 search-glow focus:outline-none focus:ring-4 focus:ring-cyan-400/20 transition-all duration-200 backdrop-blur-sm text-lg"
+                            >
+                            <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                                <i class="fas fa-search text-gray-400"></i>
+                            </div>
+                            <div x-show="searchLoading" class="absolute inset-y-0 right-0 pr-4 flex items-center">
+                                <i class="fas fa-spinner animate-spin text-cyan-400"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Search Results Section -->
+                <div x-show="searchQuery.length > 0" class="mb-16">
+                    <div class="flex items-center justify-between mb-8">
+                        <h2 class="text-2xl font-bold text-white flex items-center">
+                            <i class="fas fa-search text-cyan-400 mr-3"></i>
+                            Search Results
+                        </h2>
+                        <div x-show="searchResults.length > 0" class="bg-gradient-to-r from-cyan-400/10 to-blue-500/10 px-4 py-2 rounded-xl border border-cyan-400/20">
+                            <span class="text-gray-300">Found: </span>
+                            <span class="text-cyan-400 font-bold" x-text="searchResults.length"></span>
+                            <span class="text-gray-300"> papers</span>
+                        </div>
+                    </div>
+
+                    <!-- Loading State -->
+                    <div x-show="searchLoading" class="text-center py-12">
+                        <div class="w-16 h-16 bg-gradient-to-br from-cyan-400 to-blue-500 rounded-full flex items-center justify-center mx-auto mb-4">
+                            <i class="fas fa-search text-white animate-spin"></i>
+                        </div>
+                        <p class="text-gray-400">Searching papers...</p>
+                    </div>
+
+                    <!-- No Results -->
+                    <div x-show="!searchLoading && searchResults.length === 0 && searchQuery.length > 0" class="text-center py-12">
+                        <div class="w-24 h-24 bg-gradient-to-br from-gray-600 to-gray-700 rounded-full flex items-center justify-center mx-auto mb-6">
+                            <i class="fas fa-file-alt text-3xl text-gray-400"></i>
+                        </div>
+                        <h3 class="text-2xl font-bold text-gray-300 mb-2">No Papers Found</h3>
+                        <p class="text-gray-400">Try different keywords or check your spelling.</p>
+                    </div>
+
+                    <!-- Search Results Grid -->
+                    <div x-show="!searchLoading && searchResults.length > 0" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                        <template x-for="paper in searchResults" :key="paper.paperId">
+                            <div class="bg-gradient-to-br from-gray-800 via-gray-900 to-gray-800 rounded-2xl p-6 border border-gray-700 hover:border-cyan-400 card-hover relative overflow-hidden group">
+                                <!-- Animated background gradient -->
+                                <div class="absolute inset-0 bg-gradient-to-br from-cyan-400/5 to-blue-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                                
+                                <!-- Content -->
+                                <div class="relative z-10">
+                                    <!-- Header -->
+                                    <div class="mb-6">
+                                        <h3 class="text-xl font-bold text-white mb-3 group-hover:text-cyan-400 transition-colors duration-300 leading-tight" x-text="paper.title"></h3>
+                                        <div class="flex items-center text-sm text-gray-400 mb-2">
+                                            <i class="fas fa-user mr-2"></i>
+                                            <span x-text="paper.authors.join(', ')"></span>
+                                        </div>
+                                        <div class="flex items-center text-sm text-gray-400">
+                                            <i class="fas fa-calendar mr-2"></i>
+                                            <span x-text="paper.year || 'N/A'"></span>
+                                        </div>
+                                    </div>
+
+                                    <!-- Abstract -->
+                                    <div class="mb-6">
+                                        <div class="bg-gray-700/30 rounded-lg p-4">
+                                            <p class="text-gray-300 text-sm leading-relaxed" 
+                                               x-text="paper.abstract ? (paper.abstract.split(' ').slice(0, 50).join(' ') + (paper.abstract.split(' ').length > 50 ? '...' : '')) : 'No abstract available.'">
+                                            </p>
+                                        </div>
+                                    </div>
+
+                                    <!-- Actions -->
+                                    <div class="flex items-center justify-between">
+                                        <a :href="paper.url" 
+                                           target="_blank" 
+                                           rel="noopener noreferrer"
+                                           class="flex items-center text-cyan-400 hover:text-cyan-300 font-medium transition-colors duration-200">
+                                            <i class="fas fa-external-link-alt mr-2"></i>
+                                            View Paper
+                                        </a>
+                                        <button @click="savePaper(paper)"
+                                                :disabled="isPaperSaved(paper.url)"
+                                                class="px-4 py-2 rounded-lg font-medium transition-all duration-200 flex items-center space-x-2"
+                                                :class="isPaperSaved(paper.url) ? 'bg-gray-600 text-gray-400 cursor-not-allowed' : 'bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-600 hover:to-blue-600 text-white transform hover:scale-105'">
+                                            <i class="fas fa-bookmark"></i>
+                                            <span x-text="isPaperSaved(paper.url) ? 'Saved' : 'Save'"></span>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </template>
+                    </div>
+                </div>
+
+                <!-- Saved Papers Section -->
+                <div class="mb-16">
+                    <div class="flex items-center justify-between mb-8">
+                        <h2 class="text-2xl font-bold text-white flex items-center">
+                            <i class="fas fa-bookmark text-cyan-400 mr-3"></i>
+                            Saved Papers
+                        </h2>
+                        <div x-show="savedPapers.length > 0" class="bg-gradient-to-r from-purple-400/10 to-pink-500/10 px-4 py-2 rounded-xl border border-purple-400/20">
+                            <span class="text-gray-300">Total: </span>
+                            <span class="text-purple-400 font-bold" x-text="savedPapers.length"></span>
+                            <span class="text-gray-300"> papers</span>
+                        </div>
+                    </div>
+
+                    <!-- No Saved Papers -->
+                    <div x-show="savedPapers.length === 0" class="text-center py-12">
+                        <div class="w-24 h-24 bg-gradient-to-br from-purple-600 to-pink-600 rounded-full flex items-center justify-center mx-auto mb-6">
+                            <i class="fas fa-bookmark text-3xl text-white"></i>
+                        </div>
+                        <h3 class="text-2xl font-bold text-gray-300 mb-2">No Saved Papers</h3>
+                        <p class="text-gray-400">Papers you save will appear here for easy access.</p>
+                    </div>
+
+                    <!-- Saved Papers Grid -->
+                    <div x-show="savedPapers.length > 0" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                        <template x-for="paper in savedPapers" :key="paper._id">
+                            <div class="bg-gradient-to-br from-gray-800 via-gray-900 to-gray-800 rounded-2xl p-6 border border-gray-700 hover:border-purple-400 card-hover relative overflow-hidden group">
+                                <!-- Animated background gradient -->
+                                <div class="absolute inset-0 bg-gradient-to-br from-purple-400/5 to-pink-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                                
+                                <!-- Content -->
+                                <div class="relative z-10">
+                                    <!-- Header -->
+                                    <div class="mb-6">
+                                        <h3 class="text-xl font-bold text-white mb-3 group-hover:text-purple-400 transition-colors duration-300 leading-tight" x-text="paper.title"></h3>
+                                        <div class="flex items-center text-sm text-gray-400 mb-2">
+                                            <i class="fas fa-user mr-2"></i>
+                                            <span x-text="paper.authors.join(', ')"></span>
+                                        </div>
+                                        <div class="flex items-center text-sm text-gray-400">
+                                            <i class="fas fa-calendar mr-2"></i>
+                                            <span x-text="paper.year || 'N/A'"></span>
+                                        </div>
+                                    </div>
+
+                                    <!-- Abstract -->
+                                    <div class="mb-6">
+                                        <div class="bg-gray-700/30 rounded-lg p-4">
+                                            <p class="text-gray-300 text-sm leading-relaxed" 
+                                               x-text="paper.abstract ? (paper.abstract.split(' ').slice(0, 50).join(' ') + (paper.abstract.split(' ').length > 50 ? '...' : '')) : 'No abstract available.'">
+                                            </p>
+                                        </div>
+                                    </div>
+
+                                    <!-- Actions -->
+                                    <div class="flex items-center justify-between">
+                                        <a :href="paper.url" 
+                                           target="_blank" 
+                                           rel="noopener noreferrer"
+                                           class="flex items-center text-purple-400 hover:text-purple-300 font-medium transition-colors duration-200">
+                                            <i class="fas fa-external-link-alt mr-2"></i>
+                                            View Paper
+                                        </a>
+                                        <button @click="showDeleteConfirm(paper)"
+                                                class="px-4 py-2 rounded-lg font-medium transition-all duration-200 flex items-center space-x-2 bg-gradient-to-r from-red-500 to-pink-500 hover:from-red-600 hover:to-pink-600 text-white transform hover:scale-105">
+                                            <i class="fas fa-trash"></i>
+                                            <span>Delete</span>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </template>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Delete Confirmation Modal -->
+        <div x-show="showDeleteModal" 
+             x-transition:enter="transition ease-out duration-300" 
+             x-transition:enter-start="opacity-0" 
+             x-transition:enter-end="opacity-100"
+             x-transition:leave="transition ease-in duration-200" 
+             x-transition:leave-start="opacity-100" 
+             x-transition:leave-end="opacity-0"
+             class="fixed inset-0 z-50 modal-backdrop flex items-center justify-center p-4"
+             @click="closeDeleteModal()"
+             x-cloak>
+            
+            <div x-show="showDeleteModal" 
+                 x-transition:enter="transition ease-out duration-300" 
+                 x-transition:enter-start="opacity-0 transform scale-95" 
+                 x-transition:enter-end="opacity-100 transform scale-100"
+                 x-transition:leave="transition ease-in duration-200" 
+                 x-transition:leave-start="opacity-100 transform scale-100" 
+                 x-transition:leave-end="opacity-0 transform scale-95"
+                 class="bg-gradient-to-br from-gray-800 to-gray-900 rounded-2xl p-8 max-w-md w-full border border-gray-700 relative"
+                 @click.stop>
+                
+                <!-- Header -->
+                <div class="text-center mb-6">
+                    <div class="w-16 h-16 bg-gradient-to-br from-red-500 to-pink-500 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <i class="fas fa-trash text-2xl text-white"></i>
+                    </div>
+                    <h3 class="text-2xl font-bold text-white mb-2">Delete Paper</h3>
+                    <p class="text-gray-400">Are you sure you want to delete this paper from your saved collection?</p>
+                </div>
+
+                <!-- Paper Info -->
+                <div x-show="paperToDelete" class="bg-gray-700/30 rounded-lg p-4 mb-6">
+                    <h4 class="font-semibold text-white mb-1" x-text="paperToDelete?.title"></h4>
+                    <p class="text-sm text-gray-400" x-text="paperToDelete?.authors?.join(', ')"></p>
+                </div>
+
+                <!-- Actions -->
+                <div class="flex space-x-4">
+                    <button @click="closeDeleteModal()" 
+                            class="flex-1 px-6 py-3 bg-gray-700 hover:bg-gray-600 text-white rounded-lg font-medium transition-all duration-200">
+                        Cancel
+                    </button>
+                    <button @click="confirmDeletePaper()" 
+                            class="flex-1 px-6 py-3 bg-gradient-to-r from-red-500 to-pink-500 hover:from-red-600 hover:to-pink-600 text-white rounded-lg font-medium transition-all duration-200 transform hover:scale-105">
+                        Delete
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Success/Error Toast -->
+        <div x-show="showToast" 
+             x-transition:enter="transition ease-out duration-300" 
+             x-transition:enter-start="opacity-0 transform translate-y-2" 
+             x-transition:enter-end="opacity-100 transform translate-y-0"
+             x-transition:leave="transition ease-in duration-200" 
+             x-transition:leave-start="opacity-100 transform translate-y-0" 
+             x-transition:leave-end="opacity-0 transform translate-y-2"
+             class="fixed top-24 right-4 z-50 max-w-sm w-full"
+             x-cloak>
+            
+            <div class="bg-gradient-to-br from-gray-800 to-gray-900 rounded-xl p-4 border border-gray-700 shadow-2xl">
+                <div class="flex items-center">
+                    <div class="flex-shrink-0">
+                        <i class="fas text-lg" 
+                           :class="toastType === 'success' ? 'fa-check-circle text-green-400' : 'fa-exclamation-circle text-red-400'"></i>
+                    </div>
+                    <div class="ml-3">
+                        <p class="text-sm font-medium text-white" x-text="toastMessage"></p>
+                    </div>
+                    <button @click="closeToast()" class="ml-auto text-gray-400 hover:text-white transition-colors">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <footer class="text-gray-400 text-center p-6 bg-slate-900/80 backdrop-blur-xl select-none text-sm border-t border-slate-700/50">
+            <div class="flex items-center justify-center space-x-6">
+                <span>© 2025 ChemFlow</span>
+                <a href="https://github.com/your-repo" target="_blank" class="nav-link hover:text-blue-400 transition">
+                    <span class="mr-1">⭐</span> GitHub
+                </a>
+                <span class="text-blue-400">Built with Alpine.js & Tailwind CSS</span>
+            </div>
+        </footer>
+    </div>
+
+    <script>
+        function researchApp() {
+            return {
+                searchQuery: '',
+                searchResults: [],
+                savedPapers: [],
+                searchLoading: false,
+                showDeleteModal: false,
+                paperToDelete: null,
+                showToast: false,
+                toastMessage: '',
+                toastType: 'success',
+
+                async init() {
+                    if (!localStorage.getItem('token')) {
+                        window.location.href = '/login.html';
+                        return;
+                    }
+                    await this.loadSavedPapers();
+                },
+
+                async loadSavedPapers() {
+                    try {
+                        const res = await fetch('/api/research/saved', {
+                            headers: { Authorization: 'Bearer ' + localStorage.getItem('token') }
+                        });
+                        if (res.ok) {
+                            this.savedPapers = await res.json();
+                        }
+                    } catch (error) {
+                        console.error('Error loading saved papers:', error);
+                    }
+                },
+
+                async searchPapers() {
+                    if (this.searchQuery.length < 2) {
+                        this.searchResults = [];
+                        return;
+                    }
+
+                    this.searchLoading = true;
+                    try {
+                        const res = await fetch(`/api/research/search?q=${encodeURIComponent(this.searchQuery)}`, {
+                            headers: { Authorization: 'Bearer ' + localStorage.getItem('token') }
+                        });
+                        if (res.ok) {
+                            this.searchResults = await res.json();
+                        } else {
+                            this.searchResults = [];
+                        }
+                    } catch (error) {
+                        console.error('Search error:', error);
+                        this.searchResults = [];
+                    } finally {
+                        this.searchLoading = false;
+                    }
+                },
+
+                async savePaper(paper) {
+                    if (this.isPaperSaved(paper.url)) return;
+
+                    try {
+                        const res = await fetch('/api/research/save', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                Authorization: 'Bearer ' + localStorage.getItem('token')
+                            },
+                            body: JSON.stringify({
+                                title: paper.title,
+                                authors: paper.authors,
+                                url: paper.url,
+                                abstract: paper.abstract,
+                                year: paper.year
+                            })
+                        });
+                        if (res.ok) {
+                            const saved = await res.json();
+                            this.savedPapers.unshift(saved);
+                            this.showToastMessage('Paper saved successfully!', 'success');
+                        } else {
+                            this.showToastMessage('Failed to save paper.', 'error');
+                        }
+                    } catch (error) {
+                        console.error('Save error:', error);
+                        this.showToastMessage('Failed to save paper.', 'error');
+                    }
+                },
+
+                showDeleteConfirm(paper) {
+                    this.paperToDelete = paper;
+                    this.showDeleteModal = true;
+                    document.body.style.overflow = 'hidden';
+                },
+
+                closeDeleteModal() {
+                    this.showDeleteModal = false;
+                    this.paperToDelete = null;
+                    document.body.style.overflow = '';
+                },
+
+                async confirmDeletePaper() {
+                    if (!this.paperToDelete) return;
+
+                    try {
+                        const res = await fetch(`/api/research/saved/${this.paperToDelete._id}`, {
+                            method: 'DELETE',
+                            headers: {
+                                Authorization: 'Bearer ' + localStorage.getItem('token')
+                            }
+                        });
+                        if (res.ok) {
+                            this.savedPapers = this.savedPapers.filter(p => p._id !== this.paperToDelete._id);
+                            this.showToastMessage('Paper deleted successfully!', 'success');
+                        } else {
+                            this.showToastMessage('Failed to delete paper.', 'error');
+                        }
+                    } catch (error) {
+                        console.error('Delete error:', error);
+                        this.showToastMessage('Delete failed.', 'error');
+                    } finally {
+                        this.closeDeleteModal();
+                    }
+                },
+
+                showToastMessage(message, type) {
+                    this.toastMessage = message;
+                    this.toastType = type;
+                    this.showToast = true;
+                    setTimeout(() => {
+                        this.closeToast();
+                    }, 5000);
+                },
+
+                closeToast() {
+                    this.showToast = false;
+                },
+
+                isPaperSaved(url) {
+                    return this.savedPapers.some(p => p.url === url);
+                },
+
+                goToDashboard() {
+                    window.location.href = '/index.html';
+                },
+
+                logout() {
+                    localStorage.removeItem('token');
+                    window.location.replace('/index.html');
+                }
+            };
+        }
+    </script>
+</body>
+</html>
