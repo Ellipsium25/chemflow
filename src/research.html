@@ -421,6 +421,7 @@
 
     <script>
         function researchApp() {
+          const BASE_API = 'https://chemflow-backend.onrender.com';
             return {
                 searchQuery: '',
                 searchResults: [],
@@ -442,7 +443,7 @@
 
                 async loadSavedPapers() {
                     try {
-                        const res = await fetch('/api/research/saved', {
+                      const res = await fetch(`${BASE_API}/api/research/saved`, {
                             headers: { Authorization: 'Bearer ' + localStorage.getItem('token') }
                         });
                         if (res.ok) {
@@ -461,7 +462,7 @@
 
                     this.searchLoading = true;
                     try {
-                        const res = await fetch(`/api/research/search?q=${encodeURIComponent(this.searchQuery)}`, {
+                      const res = await fetch(`${BASE_API}/api/research/search?q=${encodeURIComponent(this.searchQuery)}`, { 
                             headers: { Authorization: 'Bearer ' + localStorage.getItem('token') }
                         });
                         if (res.ok) {
@@ -481,7 +482,7 @@
                     if (this.isPaperSaved(paper.url)) return;
 
                     try {
-                        const res = await fetch('/api/research/save', {
+                      const res = await fetch(`${BASE_API}/api/research/save`, {
                             method: 'POST',
                             headers: {
                                 'Content-Type': 'application/json',
@@ -524,7 +525,7 @@
                     if (!this.paperToDelete) return;
 
                     try {
-                        const res = await fetch(`/api/research/saved/${this.paperToDelete._id}`, {
+                      const res = await fetch(`${BASE_API}/api/research/saved/${this.paperToDelete._id}`, {
                             method: 'DELETE',
                             headers: {
                                 Authorization: 'Bearer ' + localStorage.getItem('token')

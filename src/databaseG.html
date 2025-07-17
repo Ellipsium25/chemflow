@@ -431,7 +431,7 @@
                 async loadChemicals() {
                     try {
                         // Fetch from chemicals.json instead of mock data
-                        const response = await fetch('./chemicals.json');
+                        const response = await fetch('https://chemflow.onrender.com/api/chemicals');
                         
                         if (!response.ok) {
                             throw new Error('Failed to load chemicals');

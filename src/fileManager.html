@@ -92,6 +92,8 @@
             background-color: rgba(0, 0, 0, 0.6);
         }
 
+        
+
         /* Custom scrollbar */
         ::-webkit-scrollbar {
             width: 8px;
@@ -409,7 +411,10 @@
                 newFileName: '',
                 currentFileName: '',
                 uploadInProgress: false,
-                API_BASE: 'http://localhost:3000/api/files',
+                API_BASE: window.location.hostname.includes('localhost')
+                ? 'http://localhost:3000/api/files'
+                : 'https://chemflow-backend.vercel.app/api/files',
+
                 token: null,
 
                 async init() {
