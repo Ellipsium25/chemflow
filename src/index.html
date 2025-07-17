@@ -518,8 +518,6 @@
 
     dummyCards: [ /* your cards here, unchanged */ ],
 
-    BASE_API: location.hostname === 'localhost' ? '' : 'https://chemflow.onrender.com',
-
     init() {
       this.loggedIn = !!localStorage.getItem('token');
       const loadingShown = !!localStorage.getItem('loadingShown');
@@ -544,7 +542,7 @@
     },
 
     removeActivity(id) {
-      fetch(`${this.BASE_API}/api/activity/${id}`, {
+  fetch(`/api/activity/${id}`, {
     method: 'DELETE',
     headers: {
       'Authorization': `Bearer ${localStorage.getItem('token')}`
@@ -568,7 +566,7 @@
     },
 
     startCycle() {
-      fetch(`${this.BASE_API}/api/activity/recent`, {
+  fetch('/api/activity/recent', {
     headers: {
       'Authorization': `Bearer ${localStorage.getItem('token')}`
     }
@@ -576,7 +574,7 @@
     .then(res => res.json())
     .then(data => {
       this.activities = data.map(act => {
-        let emoji = '📄', title = '', link = '#';
+        let emoji = '📄', title = '';
         const time = new Date(act.createdAt).toLocaleString();
 
         if (act.source === 'lablogs') {

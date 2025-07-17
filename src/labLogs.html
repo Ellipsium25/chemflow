@@ -319,198 +319,193 @@
   </footer>
   
   <script>
-    function labLogs() {
-      const BASE_URL = window.location.hostname.includes('localhost')
-        ? 'http://localhost:3000'
-        : 'https://chemflow-backend.vercel.app'; // your deployed backend
+  function labLogs() {
+    return {
+      currentView: 'logs',
+      logs: [],
+      loading: false,
+      saving: false,
+      editingLog: false,
+      currentLog: {
+        id: null,
+        title: '',
+        content: '',
+        createdAt: null,
+        updatedAt: null
+      },
   
-      return {
-        currentView: 'logs',
-        logs: [],
-        loading: false,
-        saving: false,
-        editingLog: false,
-        currentLog: {
+      async init() {
+        if (!localStorage.getItem('token')) {
+        window.location.href = '/login.html';  // or your login URL
+        return;
+    }
+        if (this.currentView === 'logs') {
+          await this.loadLogs();
+        }
+      },
+  
+            async loadLogs() {
+        this.loading = true;       // set loading true at the start
+        try {
+            const response = await fetch('/api/logs', {
+            headers: {
+                'Authorization': `Bearer ${localStorage.getItem('token')}`
+            }
+            });
+            const data = await response.json();
+
+            if (data.success) {
+            this.logs = data.data; // set logs BEFORE loading false
+            } else {
+            console.error('Failed to load logs:', data.message);
+            this.logs = [];
+            }
+        } catch (error) {
+            console.error('Error loading logs:', error);
+            this.logs = [];
+        } finally {
+            this.loading = false;    // loading false AFTER logs updated
+        }
+        },
+
+  
+      async openLog(logId) {
+        try {
+          const response = await fetch(`/api/logs/${logId}`, {
+            headers: {
+              'Authorization': `Bearer ${localStorage.getItem('token')}`
+            }
+          });
+          const data = await response.json();
+          
+          if (data.success) {
+            this.currentLog = {
+              id: data.data._id,
+              title: data.data.title,
+              content: data.data.content,
+              createdAt: data.data.createdAt,
+              updatedAt: data.data.updatedAt
+            };
+            this.editingLog = true;
+          }
+        } catch (error) {
+          console.error('Error loading log:', error);
+        }
+      },
+  
+      createNewLog() {
+        this.currentLog = {
           id: null,
           title: '',
           content: '',
           createdAt: null,
           updatedAt: null
-        },
+        };
+        this.editingLog = true;
+      },
   
-        async init() {
-          if (!localStorage.getItem('token')) {
-            window.location.href = '/login.html';
-            return;
-          }
-          if (this.currentView === 'logs') {
-            await this.loadLogs();
-          }
-        },
+      openLogsFromFloatingButton() {
+        this.currentView = 'logs';
+        this.sidebarOpen = false;
+        this.loadLogs();
+      },
+
+      goToLandingPage() {
+        // Replace with your actual landing page URL or routing logic
+        window.location.href = '/';
+      },
+
+      logout() {
+        localStorage.removeItem('token');
+        window.location.replace('/index.html');
+      },
   
-        async loadLogs() {
-          this.loading = true;
-          try {
-            const response = await fetch(`${BASE_URL}/api/logs`, {
-              headers: {
-                'Authorization': `Bearer ${localStorage.getItem('token')}`
-              }
-            });
-            const data = await response.json();
-  
-            if (data.success) {
-              this.logs = data.data;
-            } else {
-              console.error('Failed to load logs:', data.message);
-              this.logs = [];
-            }
-          } catch (error) {
-            console.error('Error loading logs:', error);
-            this.logs = [];
-          } finally {
-            this.loading = false;
-          }
-        },
-  
-        async openLog(logId) {
-          try {
-            const response = await fetch(`${BASE_URL}/api/logs/${logId}`, {
-              headers: {
-                'Authorization': `Bearer ${localStorage.getItem('token')}`
-              }
-            });
-            const data = await response.json();
-  
-            if (data.success) {
-              this.currentLog = {
-                id: data.data._id,
-                title: data.data.title,
-                content: data.data.content,
-                createdAt: data.data.createdAt,
-                updatedAt: data.data.updatedAt
-              };
-              this.editingLog = true;
-            }
-          } catch (error) {
-            console.error('Error loading log:', error);
-          }
-        },
-  
-        createNewLog() {
-          this.currentLog = {
-            id: null,
-            title: '',
-            content: '',
-            createdAt: null,
-            updatedAt: null
-          };
-          this.editingLog = true;
-        },
-  
-        openLogsFromFloatingButton() {
-          this.currentView = 'logs';
-          this.sidebarOpen = false;
-          this.loadLogs();
-        },
-  
-        goToLandingPage() {
-          window.location.href = '/';
-        },
-  
-        logout() {
-          localStorage.removeItem('token');
-          window.location.replace('/index.html');
-        },
-  
-        async saveLog() {
-          if (!this.currentLog.title.trim() || !this.currentLog.content.trim()) {
-            alert('Please fill in both title and content');
-            return;
-          }
-  
-          this.saving = true;
-          try {
-            const method = this.currentLog.id ? 'PUT' : 'POST';
-            const url = this.currentLog.id
-              ? `${BASE_URL}/api/logs/${this.currentLog.id}`
-              : `${BASE_URL}/api/logs`;
-  
-            const response = await fetch(url, {
-              method,
-              headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${localStorage.getItem('token')}`
-              },
-              body: JSON.stringify({
-                title: this.currentLog.title,
-                content: this.currentLog.content
-              })
-            });
-  
-            const data = await response.json();
-  
-            if (data.success) {
-              this.editingLog = false;
-              await this.loadLogs();
-            } else {
-              alert('Error saving log: ' + data.message);
-            }
-          } catch (error) {
-            console.error('Error saving log:', error);
-            alert('Error saving log');
-          } finally {
-            this.saving = false;
-          }
-        },
-  
-        async deleteLog(logId, index) {
-          this.logs[index].deleting = true;
-          try {
-            const response = await fetch(`${BASE_URL}/api/logs/${logId}`, {
-              method: 'DELETE',
-              headers: {
-                'Authorization': `Bearer ${localStorage.getItem('token')}`
-              }
-            });
-  
-            const data = await response.json();
-  
-            if (data.success) {
-              await new Promise(resolve => setTimeout(resolve, 500));
-              this.logs.splice(index, 1);
-            } else {
-              alert('Error deleting log: ' + data.message);
-              this.logs[index].deleting = false;
-            }
-          } catch (error) {
-            console.error('Error deleting log:', error);
-            alert('Error deleting log');
-          }
-        },
-  
-        closeEditor() {
-          this.editingLog = false;
-          this.currentLog = {
-            id: null,
-            title: '',
-            content: '',
-            createdAt: null,
-            updatedAt: null
-          };
-        },
-  
-        formatDate(dateString) {
-          return new Date(dateString).toLocaleDateString('en-US', {
-            year: 'numeric',
-            month: 'short',
-            day: 'numeric',
-            hour: '2-digit',
-            minute: '2-digit'
-          });
+      async saveLog() {
+        if (!this.currentLog.title.trim() || !this.currentLog.content.trim()) {
+          alert('Please fill in both title and content');
+          return;
         }
+  
+        this.saving = true;
+        try {
+          const method = this.currentLog.id ? 'PUT' : 'POST';
+          const url = this.currentLog.id ? `/api/logs/${this.currentLog.id}` : '/api/logs';
+          
+          const response = await fetch(url, {
+            method,
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${localStorage.getItem('token')}`
+            },
+            body: JSON.stringify({
+              title: this.currentLog.title,
+              content: this.currentLog.content
+            })
+          });
+  
+          const data = await response.json();
+          
+          if (data.success) {
+            this.editingLog = false;
+            await this.loadLogs();
+          } else {
+            alert('Error saving log: ' + data.message);
+          }
+        } catch (error) {
+          console.error('Error saving log:', error);
+          alert('Error saving log');
+        } finally {
+          this.saving = false;
+        }
+      },
+  
+      async deleteLog(logId, index) {
+        this.logs[index].deleting = true;
+        try {
+          const response = await fetch(`/api/logs/${logId}`, {
+            method: 'DELETE',
+            headers: {
+              'Authorization': `Bearer ${localStorage.getItem('token')}`
+            }
+          });
+  
+          const data = await response.json();
+          
+          if (data.success) {
+            await new Promise(resolve => setTimeout(resolve, 500));
+            this.logs.splice(index, 1);
+          } else {
+            alert('Error deleting log: ' + data.message);
+            this.logs[index].deleting = false;
+          }
+        } catch (error) {
+          console.error('Error deleting log:', error);
+          alert('Error deleting log');
+        }
+      },
+  
+      closeEditor() {
+        this.editingLog = false;
+        this.currentLog = {
+          id: null,
+          title: '',
+          content: '',
+          createdAt: null,
+          updatedAt: null
+        };
+      },
+  
+      formatDate(dateString) {
+        return new Date(dateString).toLocaleDateString('en-US', {
+          year: 'numeric',
+          month: 'short',
+          day: 'numeric',
+          hour: '2-digit',
+          minute: '2-digit'
+        });
       }
     }
+  }
   </script>
-  
 </body>
 </html>
