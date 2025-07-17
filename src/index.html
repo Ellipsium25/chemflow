@@ -507,6 +507,13 @@
 
 <script>
     function chemflow() {
+      window.API_BASE_URL = location.hostname.includes("localhost")
+                ? "http://localhost:5000"
+                : "https://chemflow.onrender.com";
+
+            function api(path) {
+                return `${window.API_BASE_URL}${path}`;
+            }
   return {
     loading: true,
     loadingText: "initializing",
@@ -542,7 +549,7 @@
     },
 
     removeActivity(id) {
-  fetch(`/api/activity/${id}`, {
+  fetch(api(`/api/activity/${id}`), {
     method: 'DELETE',
     headers: {
       'Authorization': `Bearer ${localStorage.getItem('token')}`
@@ -566,7 +573,7 @@
     },
 
     startCycle() {
-  fetch('/api/activity/recent', {
+  fetch(api('/api/activity/recent'), {
     headers: {
       'Authorization': `Bearer ${localStorage.getItem('token')}`
     }

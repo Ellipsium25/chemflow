@@ -396,7 +396,15 @@
     </div>
 
     <script>
+        
         function fileManager() {
+            window.API_BASE_URL = location.hostname.includes("localhost")
+                ? "http://localhost:5000"
+                : "https://chemflow.onrender.com";
+
+            function api(path) {
+                return `${window.API_BASE_URL}${path}`;
+            }
             return {
                 files: [],
                 loading: true,
@@ -409,7 +417,6 @@
                 newFileName: '',
                 currentFileName: '',
                 uploadInProgress: false,
-                API_BASE: 'http://localhost:3000/api/files',
                 token: null,
 
                 async init() {
@@ -424,7 +431,7 @@
 
                 async loadFiles() {
                     try {
-                        const res = await fetch(`${this.API_BASE}/myfiles`, {
+                        const res = await fetch(api(`${this.API_BASE}/myfiles`), {
                             headers: { 'Authorization': 'Bearer ' + this.token }
                         });
                         this.files = await res.json();
@@ -456,7 +463,7 @@
                                 const formData = new FormData();
                                 formData.append('file', file);
 
-                                await fetch(`${this.API_BASE}/upload`, {
+                                await fetch(api(`${this.API_BASE}/upload`), {
                                     method: 'POST',
                                     headers: { 'Authorization': 'Bearer ' + this.token },
                                     body: formData
@@ -552,7 +559,7 @@
                     }
 
                     try {
-                        await fetch(`${this.API_BASE}/rename/${this.fileToRename}`, {
+                        await fetch(api(`${this.API_BASE}/rename/${this.fileToRename}`), {
                             method: 'PATCH',
                             headers: {
                                 'Content-Type': 'application/json',
@@ -580,7 +587,7 @@
                     if (!this.fileToDelete) return;
 
                     try {
-                        await fetch(`${this.API_BASE}/${this.fileToDelete}`, {
+                        await fetch(api(`${this.API_BASE}/${this.fileToDelete}`), {
                             method: 'DELETE',
                             headers: { 'Authorization': 'Bearer ' + this.token }
                         });

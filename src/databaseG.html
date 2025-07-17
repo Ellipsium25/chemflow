@@ -411,6 +411,13 @@
 
     <script>
         function chemicalDatabase() {
+            window.API_BASE_URL = location.hostname.includes("localhost")
+                ? "http://localhost:5000"
+                : "https://chemflow.onrender.com";
+
+            function api(path) {
+                return `${window.API_BASE_URL}${path}`;
+            }
             return {
                 chemicals: [],
                 filteredChemicals: [],

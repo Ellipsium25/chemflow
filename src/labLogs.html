@@ -320,6 +320,13 @@
   
   <script>
   function labLogs() {
+    window.API_BASE_URL = location.hostname.includes("localhost")
+                ? "http://localhost:5000"
+                : "https://chemflow.onrender.com";
+
+            function api(path) {
+                return `${window.API_BASE_URL}${path}`;
+            }
     return {
       currentView: 'logs',
       logs: [],
@@ -347,7 +354,7 @@
             async loadLogs() {
         this.loading = true;       // set loading true at the start
         try {
-            const response = await fetch('/api/logs', {
+            const response = await fetch(api('/api/logs'), {
             headers: {
                 'Authorization': `Bearer ${localStorage.getItem('token')}`
             }
@@ -371,7 +378,7 @@
   
       async openLog(logId) {
         try {
-          const response = await fetch(`/api/logs/${logId}`, {
+          const response = await fetch(api(`/api/logs/${logId}`), {
             headers: {
               'Authorization': `Bearer ${localStorage.getItem('token')}`
             }
@@ -431,7 +438,7 @@
           const method = this.currentLog.id ? 'PUT' : 'POST';
           const url = this.currentLog.id ? `/api/logs/${this.currentLog.id}` : '/api/logs';
           
-          const response = await fetch(url, {
+          const response = await fetch(api(url), {
             method,
             headers: {
               'Content-Type': 'application/json',
@@ -462,7 +469,7 @@
       async deleteLog(logId, index) {
         this.logs[index].deleting = true;
         try {
-          const response = await fetch(`/api/logs/${logId}`, {
+          const response = await fetch(api(`/api/logs/${logId}`), {
             method: 'DELETE',
             headers: {
               'Authorization': `Bearer ${localStorage.getItem('token')}`

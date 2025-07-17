@@ -443,6 +443,13 @@
 
   <script>
     function personalDBApp() {
+      window.API_BASE_URL = location.hostname.includes("localhost")
+                ? "http://localhost:5000"
+                : "https://chemflow.onrender.com";
+
+            function api(path) {
+                return `${window.API_BASE_URL}${path}`;
+            }
       return {
         darkMode: true,
         loading: false,
@@ -501,7 +508,7 @@
         // Check admin status from backend or token (simplified here)
         async checkAdmin() {
           try {
-            const res = await fetch('/api/auth/me', {
+            const res = await fetch(api('/api/auth/me'), {
               headers: {
                 'Authorization': `Bearer ${localStorage.getItem('token')}`
               }
@@ -531,7 +538,7 @@
         async loadPersonalChemicals() {
           this.loading = true;
           try {
-            const res = await fetch('/api/personaldb/chemicals', {
+            const res = await fetch(api('/api/personaldb/chemicals'), {
               headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
             });
             this.personalChemicals = await res.json();
@@ -558,7 +565,7 @@
 
             this.loading = true;
             try {
-                const res = await fetch('/api/personaldb/chemicals', {
+                const res = await fetch(api('/api/personaldb/chemicals'), {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -595,7 +602,7 @@
         async updateQuantity(id, quantity) {
           this.loading = true;
           try {
-            const res = await fetch(`/api/personaldb/chemicals/${id}`, {
+            const res = await fetch(api(`/api/personaldb/chemicals/${id}`), {
               method: 'PATCH',
               headers: {
                 'Content-Type': 'application/json',
@@ -619,7 +626,7 @@
         async deleteChemical(id) {
           this.loading = true;
           try {
-            const res = await fetch(`/api/personaldb/chemicals/${id}`, {
+            const res = await fetch(api(`/api/personaldb/chemicals/${id}`), {
               method: 'DELETE',
               headers: {
                 'Authorization': `Bearer ${localStorage.getItem('token')}`
@@ -643,7 +650,7 @@
           if (!this.newRequestName) return;
           this.loading = true;
           try {
-            const res = await fetch('/api/personaldb/requests', {
+            const res = await fetch(api('/api/personaldb/requests'), {
               method: 'POST',
               headers: {
                 'Content-Type': 'application/json',
@@ -669,7 +676,7 @@
         async loadUserRequests() {
           this.loading = true;
           try {
-            const res = await fetch('/api/personaldb/requests', {
+            const res = await fetch(api('/api/personaldb/requests'), {
               headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
             });
             this.userRequests = await res.json();
@@ -684,7 +691,7 @@
         async approveRequest(id) {
           this.loading = true;
           try {
-            const res = await fetch(`/api/personaldb/admin/requests/${id}/approve`, {
+            const res = await fetch(api(`/api/personaldb/admin/requests/${id}/approve`), {
               method: 'PATCH',
               headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
             });
@@ -712,7 +719,7 @@
         async rejectRequestConfirm() {
           this.loading = true;
           try {
-            const res = await fetch(`/api/personaldb/admin/requests/${this.rejectRequestItem._id}/reject`, {
+            const res = await fetch(api(`/api/personaldb/admin/requests/${this.rejectRequestItem._id}/reject`), {
               method: 'PATCH',
               headers: {
                 'Content-Type': 'application/json',
@@ -738,7 +745,7 @@
                 async loadAllRequestsForAdmin() {
         this.loading = true;
         try {
-            const res = await fetch('/api/personaldb/admin/requests', {
+            const res = await fetch(api('/api/personaldb/admin/requests'), {
             headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
             });
             if (!res.ok) {

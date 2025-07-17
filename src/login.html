@@ -272,6 +272,13 @@
 
   <script>
     function authPage() {
+      window.API_BASE_URL = location.hostname.includes("localhost")
+                ? "http://localhost:5000"
+                : "https://chemflow.onrender.com";
+
+            function api(path) {
+                return `${window.API_BASE_URL}${path}`;
+            }
       return {
         authType: 'user', // 'user' or 'guest'
         userMode: 'login', // 'login' or 'register'
@@ -312,7 +319,7 @@
           }
 
           try {
-            const response = await fetch(endpoint, {
+            const response = await fetch(api(endpoint), {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify(payload),
@@ -337,7 +344,7 @@
           this.errorMessage = '';
           this.loading = true;
           try {
-            const response = await fetch('/api/auth/guest', {
+            const response = await fetch(api('/api/auth/guest'), {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
             });
