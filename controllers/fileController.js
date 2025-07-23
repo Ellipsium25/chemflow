@@ -1,93 +1,64 @@
+const streamifier = require('streamifier');
+const cloudinary = require('../utilities/cloudinary');
 const path = require('path');
 const fs = require('fs');
 const File = require('../models/File');
 
 exports.uploadFile = async (req, res) => {
-    try {
-      const file = req.file;
-      if (!file) return res.status(400).json({ error: 'No file uploaded' });
-  
-      const newFile = new File({
-        owner: req.user._id,
-        originalName: file.originalname,
-        storedName: file.filename,
-        mimeType: file.mimetype,
-        path: path.relative(path.join(__dirname, '..'), file.path),
+  try {
+    const file = req.file;
+    if (!file) return res.status(400).json({ error: 'No file uploaded' });
+
+    const streamUpload = () =>
+      new Promise((resolve, reject) => {
+        const stream = cloudinary.uploader.upload_stream(
+          {
+            resource_type: 'auto', // handles pdf, docx, images, etc.
+            folder: `chemflow_user_${req.user._id}`,
+          },
+          (error, result) => {
+            if (result) resolve(result);
+            else reject(error);
+          }
+        );
+        streamifier.createReadStream(file.buffer).pipe(stream);
       });
-  
-      await newFile.save();
-  
-      res.json({ message: 'File uploaded successfully', file: newFile });
-    } catch (err) {
-      console.error(err);
-      res.status(500).json({ error: 'Upload failed' });
-    }
-  };
-  
 
-  exports.renameFile = async (req, res) => {
-    try {
-      const { fileId } = req.params;
-      const { newName } = req.body;
-  
-      console.log('Rename request:', fileId, newName, 'User:', req.user._id);
-  
-      const file = await File.findOne({ _id: fileId, owner: req.user._id });
-      if (!file) {
-        console.log('File not found');
-        return res.status(404).json({ error: 'File not found' });
-      }
-  
-      const currentExt = path.extname(file.originalName);
-      const requestedExt = path.extname(newName);
-  
-      if (requestedExt && requestedExt !== currentExt) {
-        console.log('Attempt to change file extension blocked');
-        return res.status(400).json({ error: 'Changing file extension is not allowed.' });
-      }
-  
-      const baseNewName = path.basename(newName, requestedExt || currentExt);
-      const finalName = baseNewName + currentExt;
-  
-      const uploadDir = path.join(__dirname, '../uploads', `uploads_user_${req.user._id}`);
-      const oldPath = path.join(uploadDir, file.storedName);
+    const result = await streamUpload();
+
+    const newFile = new File({
+      owner: req.user._id,
+      originalName: file.originalname,
+      storedName: result.public_id,
+      mimeType: file.mimetype,
+      path: result.secure_url,
+      size: file.size,
+    });
+
+    await newFile.save();
+    res.json({ message: 'File uploaded successfully', file: newFile });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Upload failed' });
+  }
+};
 
   
-      console.log('Old file path:', oldPath);
-  
-      const newStoredName = `${Date.now()}-${Math.floor(Math.random() * 100000)}${currentExt}`;
-      const newPath = path.join(uploadDir, newStoredName);
-      console.log('New file path:', newPath);
-  
-      fs.renameSync(oldPath, newPath);
-  
-      file.originalName = finalName;
-      file.storedName = newStoredName;
-      file.path = path.relative(path.join(__dirname, '..'), newPath);
 
-      await file.save();
   
-      res.json({ message: 'File renamed successfully', file });
   
-    } catch (err) {
-      console.error('Rename error:', err);
-      res.status(500).json({ error: 'Rename failed', details: err.message });
-    }
-  };
-  
-exports.getUserFiles = async (req, res) => {
+  exports.getUserFiles = async (req, res) => {
     try {
       const files = await File.find({ owner: req.user._id }).sort({ updatedAt: -1 });
   
-      // Map files to add URL and rename fields for frontend convenience
       const mappedFiles = files.map(file => ({
         _id: file._id,
         originalName: file.originalName,
         storedName: file.storedName,
-        mimeType: file.mimeType,    // exact casing as in DB
+        mimeType: file.mimeType,
         createdAt: file.createdAt,
         updatedAt: file.updatedAt,
-        url: `/uploads/uploads_user_${req.user._id}/${file.storedName}`, // this URL must be accessible statically from Express
+        url: file.path, // direct Cloudinary link
       }));
   
       res.json(mappedFiles);
@@ -96,24 +67,25 @@ exports.getUserFiles = async (req, res) => {
     }
   };
   
+  
 
 
-exports.deleteFile = async (req, res) => {
-  try {
-    const { fileId } = req.params;
-
-    const file = await File.findOneAndDelete({ _id: fileId, owner: req.user._id });
-
-    if (!file) return res.status(404).json({ error: 'File not found' });
-
-    fs.unlink(file.path, (err) => {
-      if (err) console.error('Error deleting file from disk:', err);
-    });
-
-    res.json({ message: 'File deleted' });
-  } catch (err) {
-    res.status(500).json({ error: 'Delete failed' });
-  }
-};
+  exports.deleteFile = async (req, res) => {
+    try {
+      const { fileId } = req.params;
+      const file = await File.findOneAndDelete({ _id: fileId, owner: req.user._id });
+  
+      if (!file) return res.status(404).json({ error: 'File not found' });
+  
+      await cloudinary.uploader.destroy(file.storedName, {
+        resource_type: 'auto'
+      });
+  
+      res.json({ message: 'File deleted' });
+    } catch (err) {
+      res.status(500).json({ error: 'Delete failed' });
+    }
+  };
+  
 
 

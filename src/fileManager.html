@@ -517,66 +517,8 @@
                     this.storageUsed = `${this.files.length * 2.5} MB`;
                 },
 
-                openRenameModal(id, oldName) {
-                    this.fileToRename = id;
-                    this.currentFileName = oldName;
-                    
-                    // Extract just the base name without extension
-                    const parts = oldName.split('.');
-                    if (parts.length >= 2) {
-                        parts.pop(); // Remove extension
-                        this.newFileName = parts.join('.');
-                    } else {
-                        this.newFileName = oldName;
-                    }
-                    
-                    this.showRenameModal = true;
-                    
-                    // Focus the input after modal opens
-                    setTimeout(() => {
-                        const input = document.querySelector('input[x-model="newFileName"]');
-                        if (input) {
-                            input.focus();
-                            input.select();
-                        }
-                    }, 100);
-                },
 
-                async executeRename() {
-                    if (!this.newFileName.trim() || !this.fileToRename) return;
-                    
-                    // Get the original extension
-                    const parts = this.currentFileName.split('.');
-                    const extension = parts.length >= 2 ? parts.pop() : '';
-                    
-                    // Construct the final name with extension
-                    const finalName = this.newFileName.trim() + (extension ? '.' + extension : '');
-                    
-                    // Don't rename if name hasn't changed
-                    if (finalName === this.currentFileName) {
-                        this.showRenameModal = false;
-                        return;
-                    }
-
-                    try {
-                        await fetch(api(`${this.API_BASE}/rename/${this.fileToRename}`), {
-                            method: 'PATCH',
-                            headers: {
-                                'Content-Type': 'application/json',
-                                'Authorization': 'Bearer ' + this.token
-                            },
-                            body: JSON.stringify({ newName: finalName })
-                        });
-                        await this.loadFiles();
-                    } catch (error) {
-                        console.error('Error renaming file:', error);
-                    }
-
-                    this.showRenameModal = false;
-                    this.fileToRename = null;
-                    this.newFileName = '';
-                    this.currentFileName = '';
-                },
+                
 
                 confirmDelete(id) {
                     this.fileToDelete = id;
