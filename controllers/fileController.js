@@ -11,12 +11,14 @@ exports.uploadFile = async (req, res) => {
 
     const streamUpload = () =>
       new Promise((resolve, reject) => {
+        const uploadOptions = {
+          resource_type: 'auto', // handles pdf, docx, images, etc.
+          folder: `chemflow_user_${req.user._id}`,
+          access_mode: 'public', // This is the line we're checking
+        };
+        console.log('Cloudinary Upload Options being sent:', uploadOptions);
         const stream = cloudinary.uploader.upload_stream(
-          {
-            resource_type: 'auto', // handles pdf, docx, images, etc.
-            folder: `chemflow_user_${req.user._id}`,
-            access_mode: 'public',
-          },
+          uploadOptions, // Pass the options variable here
           (error, result) => {
             if (result) resolve(result);
             else reject(error);
