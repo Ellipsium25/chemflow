@@ -15,6 +15,7 @@ exports.uploadFile = async (req, res) => {
           {
             resource_type: 'auto', // handles pdf, docx, images, etc.
             folder: `chemflow_user_${req.user._id}`,
+            access_mode: 'public',
           },
           (error, result) => {
             if (result) resolve(result);
