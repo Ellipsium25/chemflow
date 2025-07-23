@@ -402,9 +402,10 @@
                 ? "http://localhost:5000"
                 : "https://chemflow.onrender.com";
 
-            function api(path) {
-                return `${window.API_BASE_URL}${path}`;
-            }
+                function api(path) {
+            return `${window.API_BASE_URL}/api/files${path}`;
+        }
+
             return {
                 files: [],
                 loading: true,
@@ -431,7 +432,7 @@
 
                 async loadFiles() {
                     try {
-                        const res = await fetch(api(`${this.API_BASE}/myfiles`), {
+                        const res = await fetch(api(`/myfiles`), {
                             headers: { 'Authorization': 'Bearer ' + this.token }
                         });
                         this.files = await res.json();
@@ -463,7 +464,7 @@
                                 const formData = new FormData();
                                 formData.append('file', file);
 
-                                await fetch(api(`${this.API_BASE}/upload`), {
+                                await fetch(api(`/upload`), {
                                     method: 'POST',
                                     headers: { 'Authorization': 'Bearer ' + this.token },
                                     body: formData
@@ -529,7 +530,7 @@
                     if (!this.fileToDelete) return;
 
                     try {
-                        await fetch(api(`${this.API_BASE}/${this.fileToDelete}`), {
+                        await fetch(api(`/${this.fileToDelete}`), {
                             method: 'DELETE',
                             headers: { 'Authorization': 'Bearer ' + this.token }
                         });
